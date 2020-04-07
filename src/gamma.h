@@ -12,6 +12,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#include "util.h"
+
 /**
  * Struktura przechowująca stan gry.
  */
@@ -28,8 +30,8 @@ typedef struct gamma gamma_t;
  * @return Wskaźnik na utworzoną strukturę lub NULL, gdy nie udało się
  * zaalokować pamięci lub któryś z parametrów jest niepoprawny.
  */
-gamma_t *gamma_new(uint32_t width, uint32_t height,
-                   uint32_t players, uint32_t areas);
+gamma_t *gamma_new(uint32_t width, uint32_t height, uint32_t players,
+                   uint32_t areas);
 
 /** @brief Usuwa strukturę przechowującą stan gry.
  * Usuwa z pamięci strukturę wskazywaną przez @p g.
