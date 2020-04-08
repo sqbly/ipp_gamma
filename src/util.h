@@ -13,7 +13,7 @@ point_t make_point(ui32 x, ui32 y);
 
 point_t COMPASS_ROSE[] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
 
-point_t add_points(point_t a, point_t b);
+point_t point_add(point_t a, point_t b);
 
 bool point_equal(point_t a, point_t b);
 

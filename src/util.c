@@ -7,7 +7,7 @@ point_t make_point(ui32 x, ui32 y) {
     return res;
 }
 
-point_t add_points(point_t a, point_t b) {
+point_t point_add(point_t a, point_t b) {
     return make_point(a.x + b.x, a.y + b.y);
 }
 
