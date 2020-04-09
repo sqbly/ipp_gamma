@@ -32,5 +32,9 @@ uint32_t **new_uint32_2_dimension_array(uint32_t width, uint32_t height);
 
 void delete_2_dimension_array(void **arr, ui32 size);
 
+ui32 get_number_length(ui32 num);
+
+char get_ith_digit_in_number(ui32 num, ui32 i);
+
 
 #endif 

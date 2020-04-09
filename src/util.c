@@ -60,3 +60,26 @@ void delete_2_dimension_array(void **arr, ui32 size) {
 
     free(arr);
 }
+
+ui32 get_number_length(ui32 num) {
+    int res = 0;
+
+    while (num >= 0) {
+        num /= 10;
+        res++;
+    }
+
+    return res;
+}
+
+char get_ith_digit_in_number(ui32 num, ui32 i) {
+    ui32 num_len = get_number_length(num);
+    ui32 rev_index = num_len - i - 1;
+
+    while (rev_index > 0) {
+        num /= 10;
+        rev_index--;
+    }
+
+    return num % 10;
+}

@@ -353,3 +353,41 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
         gamma_move(g, player, x, y);
     }
 }
+
+char gamma_ith_char_in_square_description(gamma_t *g, ui32 x, ui32 y, ui32 i) {
+    ui32 square_width = get_number_length(g->no_of_players) + 1;
+    ui32 owner_num = g->board[x][y].owner;
+
+    if (i == square_width - 1 && x == g->width)
+        return '\n';
+
+    if (owner_num == 0) {
+        if (i == square_width / 2)
+            return '.';
+        else
+            return ' ';
+    } else {
+        if (i < get_number_length(owner_num) - 1)
+            return get_ith_digit_in_number(owner_num, i);
+        else
+            return ' ';
+    }
+}
+
+char *gamma_board(gamma_t *g) {
+    ui32 square_width = get_number_length(g->no_of_players) + 1;
+    ui64 res_size = (square_width * g->width) * g->height;
+
+    char *res = malloc(res_size * sizeof(char));
+    if (res == NULL)
+        return NULL;
+
+    ui64 iter = 0;
+
+    for (int i = g->height; i > 0; i--)
+        for (int j = 1; j <= g->width; j++)
+            for (int k = 0; k < square_width; k++)
+                res[iter] = gamma_ith_char_in_square_description(g, i, j, k);
+
+    return res;
+}
