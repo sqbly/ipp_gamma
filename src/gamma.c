@@ -136,6 +136,14 @@ void gamma_decrease_area_count(gamma_t *g, ui32 player) {
     g->players[player].area_count--;
 }
 
+void gamma_mark_visit(gamma_t *g, point_t square) {
+    g->board[square.x][square.y].last_visit = g->bfs_calls;
+}
+
+bool gamma_recently_visited(gamma_t *g, point_t square) {
+    return g->board[square.x][square.y].last_visit == g->bfs_calls;
+}
+
 void gamma_give_square_to_player(gamma_t *g, point_t square, ui32 player) {
     g->board[square.x][square.y].owner = player;
     g->board[square.x][square.y].parent = &g->board[square.x][square.y];
@@ -145,6 +153,10 @@ void gamma_give_square_to_player(gamma_t *g, point_t square, ui32 player) {
 
 bool gamma_area_limit_reached(gamma_t *g, ui32 player) {
     return g->players[player].area_count >= g->max_area_count;
+}
+
+bool gamma_area_limit_exceeded(gamma_t *g, ui32 player) {
+    return g->players[player].area_count > g->max_area_count;
 }
 
 bool gamma_square_adjacent_to_player(gamma_t *g, point_t square, ui32 player) {
@@ -246,15 +258,53 @@ void gamma_forget_parents_in_area(gamma_t *g, ui32 player, point_t start) {
     while (!list_empty(list)) {
         square = list_pop(list);
 
-        if (gamma_square_owner(g, square) != player ||
-            gamma_square_last_visit == g->bfs_calls)
-            continue;
-
         g->board[square.x][square.y].parent = &g->board[square.x][square.y];
-        g->board[square.x][square.y].last_visit = g->bfs_calls;
+
+        point_t tmp;
+        for (int i = 0; i < 4; i++) {
+            tmp = point_add(square, COMPASS_ROSE[i]);
+            if (!gamma_recently_visited(g, tmp) &&
+                gamma_square_owner(g, tmp) == player) {
+                list_add(list, point_add(square, COMPASS_ROSE[i]));
+                gamma_mark_visit(g, tmp);
+            }
+        }
+    }
+
+    list_delete(list);
+}
+
+void gamma_recalc_areas_and_parents(gamma_t *g, ui32 player, point_t start) {
+    list_t list = list_init();
+    point_t square;
+    for (int i = 0; i < 4; i++) {
+        square = point_add(start, COMPASS_ROSE[i]);
+        if (gamma_square_owner(g, square) == player) {
+            list_add(list, square);
+            gamma_increase_area_count(g, player);
+        }
+    }
+
+    g->bfs_calls++;
+
+    point_t tmp;
+    while (!list_empty(list)) {
+        square = list_pop(list);
 
         for (int i = 0; i < 4; i++) {
-            list_add(list, point_add(square, COMPASS_ROSE[i]));
+            tmp = point_add(square, COMPASS_ROSE[i]);
+
+            if (gamma_square_owner(g, tmp) == player) {
+                if (gamma_recently_visited(g, tmp)) {
+                    if (!are_in_union(g, square, tmp)) {
+                        gamma_decrease_area_count(g, player);
+                        make_union(g, square, tmp);
+                    }
+                } else {
+                    list_add(list, tmp);
+                    gamma_mark_visit(g, tmp);
+                }
+            }
         }
     }
 
@@ -282,10 +332,24 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
 
     // puszczenie bfsa naprawiajacego f&u i liczbe spojnych gracza2 na
     // sasiednich polach
+    gamma_recently_visited(g, target);
 
     // sprawdzenie czy gracz 2 przekracza liczbe obszarow
+    if (gamma_area_limit_exceeded(g, old_owner)) {
+        // tak - gamma_move(pole, gracz2)
+        gamma_move(g, old_owner, x, y);
+    } else {
+        // nie - sprawdzenie czy sasiednie pola wolne sa dalej dostepne dla
+        // gracza2
+        // gamma_move(pole, gracz)
+        for (int i = 0; i < 4; i++) {
+            point_t tmp = point_add(target, COMPASS_ROSE[i]);
+            if (gamma_square_owner(g, tmp) != old_owner &&
+                !gamma_square_adjacent_to_player(g, tmp, old_owner)) {
+                g->players[old_owner].available_adjacent_squares--;
+            }
+        }
 
-    // tak - gamma_move(pole, gracz2)
-    // nie - sprawdzenie czy sasiednie pola wolne sa dalej dostepne dla gracza2
-    //       gamma_move(pole, gracz)
+        gamma_move(g, player, x, y);
+    }
 }
