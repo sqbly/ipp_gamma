@@ -1,3 +1,6 @@
+#ifndef UTIL_H
+#define UTIL_H
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -28,3 +31,6 @@ point_t point_to_left(point_t p);
 uint32_t **new_uint32_2_dimension_array(uint32_t width, uint32_t height);
 
 void delete_2_dimension_array(void **arr, ui32 size);
+
+
+#endif 

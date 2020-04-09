@@ -20,6 +20,13 @@ list_t list_init() {
     return res;
 }
 
+void list_delete(list_t l) {
+    if (l == NULL)
+        return;
+
+    free(l);
+}
+
 bool list_empty(list_t l) {
     return l->head == NULL;
 }
@@ -48,7 +55,11 @@ point_t list_pop(list_t l) {
 
     point_t res = l->head->val;
 
+    node_t *tmp = l->head;
+
     l->head = l->head->next;
+
+    free(tmp);
 
     if (l->head == NULL)
         l->back = NULL;

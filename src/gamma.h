@@ -14,6 +14,7 @@
 #include <stdlib.h>
 
 #include "util.h"
+#include "list.h"
 
 /**
  * Struktura przechowująca stan gry.

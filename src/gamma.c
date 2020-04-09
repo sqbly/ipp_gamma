@@ -121,8 +121,19 @@ ui32 gamma_square_owner(gamma_t *g, point_t square) {
         return g->board[square.x][square.y].owner;
 }
 
+ui32 gamma_square_last_visit(gamma_t *g, point_t square) {
+    if (gamma_square_out_of_bounds(g, square))
+        return g->bfs_calls;
+    else
+        return g->board[square.x][square.y].last_visit;
+}
+
 void gamma_increase_area_count(gamma_t *g, ui32 player) {
     g->players[player].area_count++;
+}
+
+void gamma_decrease_area_count(gamma_t *g, ui32 player) {
+    g->players[player].area_count--;
 }
 
 void gamma_give_square_to_player(gamma_t *g, point_t square, ui32 player) {
@@ -225,6 +236,29 @@ bool gamma_golden_possible(gamma_t *g, uint32_t player) {
 }
 
 void gamma_forget_parents_in_area(gamma_t *g, ui32 player, point_t start) {
+    list_t list = list_init();
+    list_add(list, start);
+
+    g->bfs_calls++;
+
+    point_t square;
+
+    while (!list_empty(list)) {
+        square = list_pop(list);
+
+        if (gamma_square_owner(g, square) != player ||
+            gamma_square_last_visit == g->bfs_calls)
+            continue;
+
+        g->board[square.x][square.y].parent = &g->board[square.x][square.y];
+        g->board[square.x][square.y].last_visit = g->bfs_calls;
+
+        for (int i = 0; i < 4; i++) {
+            list_add(list, point_add(square, COMPASS_ROSE[i]));
+        }
+    }
+
+    list_delete(list);
 }
 
 bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
@@ -240,8 +274,11 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
     ui32 old_owner = gamma_square_owner(g, target);
 
     // bfs czyszczacy f&u
+    gamma_forget_parents_in_area(g, player, target);
 
     // zwolnienie pola i zmniejszenie liczby spojnych gracza2
+    g->board[x][y].owner = 0;
+    gamma_decrease_area_count(g, player);
 
     // puszczenie bfsa naprawiajacego f&u i liczbe spojnych gracza2 na
     // sasiednich polach
