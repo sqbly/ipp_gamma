@@ -12,35 +12,35 @@
 #endif
 
 #include "gamma.h"
+
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-//test
+// test
 
 /**
  * Tak ma wyglądać plansza po wykonaniu wszystkich testów.
  */
 static const char board[] =
-    "1.........\n"
-    "..........\n"
-    "..........\n"
-    "......2...\n"
-    ".....2....\n"
-    "..........\n"
-    "..........\n"
-    "1.........\n"
-    "1221......\n"
-    "1.........\n";
+    "1 . . . . . . . . .\n"
+    ". . . . . . . . . .\n"
+    ". . . . . . . . . .\n"
+    ". . . . . . 2 . . .\n"
+    ". . . . . 2 . . . .\n"
+    ". . . . . . . . . .\n"
+    ". . . . . . . . . .\n"
+    "1 . . . . . . . . .\n"
+    "1 2 2 1 . . . . . .\n"
+    "1 . . . . . . . . .\n";
 
 /** @brief Testuje silnik gry gamma.
  * Przeprowadza przykładowe testy silnika gry gamma.
  * @return Zero, gdy wszystkie testy przebiegły poprawnie,
  * a w przeciwnym przypadku kod zakończenia programu jest kodem błędu.
  */
-int main()
-{
+int main() {
     gamma_t *g;
 
     g = gamma_new(0, 0, 0, 0);
@@ -63,12 +63,17 @@ int main()
     assert(gamma_move(g, 1, 0, 2));
     assert(gamma_move(g, 1, 0, 9));
     assert(!gamma_move(g, 1, 5, 5));
+    printf("%d\n", gamma_free_fields(g, 1));
     assert(gamma_free_fields(g, 1) == 6);
     assert(gamma_move(g, 1, 0, 1));
     assert(gamma_free_fields(g, 1) == 95);
+    printf("%d\n", gamma_free_fields(g, 1));
     assert(gamma_move(g, 1, 5, 5));
+    printf("%d\n", gamma_free_fields(g, 1));
     assert(!gamma_move(g, 1, 6, 6));
+    printf("%d\n", gamma_free_fields(g, 1));
     assert(gamma_busy_fields(g, 1) == 5);
+    printf("%d\n", gamma_free_fields(g, 1));
     assert(gamma_free_fields(g, 1) == 10);
     assert(gamma_move(g, 2, 2, 1));
     assert(gamma_move(g, 2, 1, 1));
@@ -80,6 +85,7 @@ int main()
     assert(gamma_golden_move(g, 2, 5, 5));
     assert(!gamma_golden_possible(g, 2));
     assert(gamma_move(g, 2, 6, 6));
+    printf("%d\n", gamma_free_fields(g, 2));
     assert(gamma_busy_fields(g, 1) == 4);
     assert(gamma_free_fields(g, 1) == 91);
     assert(gamma_busy_fields(g, 2) == 5);
@@ -88,12 +94,21 @@ int main()
     assert(gamma_busy_fields(g, 1) == 5);
     assert(gamma_free_fields(g, 1) == 8);
     assert(gamma_busy_fields(g, 2) == 4);
+    printf("%d\n", gamma_free_fields(g, 2));
+    printf("prawie sukces\n");
     assert(gamma_free_fields(g, 2) == 10);
+    printf("sukces\n");
 
     char *p = gamma_board(g);
+    printf("yeah\n");
     assert(p);
+    printf("pasmo sukcesow\n");
+    printf("%s", p);
+
+    printf("dupinson\n");
+    printf("dupinson\n");
+
     assert(strcmp(p, board) == 0);
-    printf(p);
     free(p);
 
     gamma_delete(g);

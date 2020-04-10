@@ -14,9 +14,9 @@ typedef struct point {
 
 point_t make_point(ui32 x, ui32 y);
 
-point_t COMPASS_ROSE[] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
-
 point_t point_add(point_t a, point_t b);
+
+point_t compass_rose(int i);
 
 bool point_equal(point_t a, point_t b);
 
@@ -36,5 +36,4 @@ ui32 get_number_length(ui32 num);
 
 char get_ith_digit_in_number(ui32 num, ui32 i);
 
-
-#endif 
+#endif

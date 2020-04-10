@@ -52,7 +52,7 @@ gamma_t *gamma_new(uint32_t width, uint32_t height, uint32_t players,
     if (res->board == NULL)
         return NULL;
 
-    for (int i = 0; i < width; i++) {
+    for (ui32 i = 0; i <= width; i++) {
         res->board[i] = calloc((height + 1), sizeof(square_t));
         if (res->board[i] == NULL)
             return NULL;
@@ -97,7 +97,7 @@ void union_squares(gamma_t *g, square_t *a, square_t *b) {
 
 bool are_in_union(gamma_t *g, point_t a, point_t b) {
     square_t *a_square = &g->board[a.x][a.y];
-    square_t *b_square = &g->board[a.x][a.y];
+    square_t *b_square = &g->board[b.x][b.y];
 
     return find(g, a_square) == find(g, b_square);
 }
@@ -144,7 +144,56 @@ bool gamma_recently_visited(gamma_t *g, point_t square) {
     return g->board[square.x][square.y].last_visit == g->bfs_calls;
 }
 
+bool gamma_square_adjacent_to_player(gamma_t *g, point_t square, ui32 player) {
+    int target_owner_squares = 0;
+
+    for (int i = 0; i < 4; i++)
+        if (gamma_square_owner(g, point_add(square, compass_rose(i))) == player)
+            target_owner_squares++;
+
+    return target_owner_squares != 0;
+}
+
+void gamma_mark_square_unavailable(gamma_t *g, point_t square) {
+    ui32 already_updated[4], owner;
+    point_t tmp;
+    bool updated;
+    for (int i = 0; i < 4; i++) {
+        updated = false;
+        tmp = point_add(square, compass_rose(i));
+        owner = gamma_square_owner(g, tmp);
+        already_updated[i] = owner;
+
+        for (int j = 0; j < i; j++)
+            if (already_updated[j] == owner)
+                updated = true;
+
+        if (!updated)
+            g->players[owner].available_adjacent_squares--;
+    }
+}
+
+void gamma_mark_square_available(gamma_t *g, point_t square) {
+    ui32 already_updated[4], owner;
+    point_t tmp;
+    bool updated;
+    for (int i = 0; i < 4; i++) {
+        updated = false;
+        tmp = point_add(square, compass_rose(i));
+        owner = gamma_square_owner(g, tmp);
+        already_updated[i] = owner;
+
+        for (int j = 0; j < i; j++)
+            if (already_updated[j] == owner)
+                updated = true;
+
+        if (!updated)
+            g->players[owner].available_adjacent_squares++;
+    }
+}
+
 void gamma_give_square_to_player(gamma_t *g, point_t square, ui32 player) {
+    gamma_mark_square_unavailable(g, square);
     g->board[square.x][square.y].owner = player;
     g->board[square.x][square.y].parent = &g->board[square.x][square.y];
     g->players[player].occupied_squares++;
@@ -159,25 +208,16 @@ bool gamma_area_limit_exceeded(gamma_t *g, ui32 player) {
     return g->players[player].area_count > g->max_area_count;
 }
 
-bool gamma_square_adjacent_to_player(gamma_t *g, point_t square, ui32 player) {
-    int target_owner_squares = 0;
-
-    for (int i = 0; i < 4; i++)
-        if (gamma_square_owner(g, point_add(square, COMPASS_ROSE[i])) == player)
-            target_owner_squares++;
-
-    return target_owner_squares != 0;
-}
-
 void update_free_adjacent(gamma_t *g, ui32 player, point_t square,
                           point_t relative_position) {
     point_t target = point_add(square, relative_position);
 
-    if (gamma_square_owner(g, target) != 0)
+    if (gamma_square_owner(g, target) != 0 ||
+        gamma_square_out_of_bounds(g, target))
         return;
 
     for (int i = 0; i < 4; i++)
-        if (gamma_square_owner(g, point_add(target, COMPASS_ROSE[i])) == player)
+        if (gamma_square_owner(g, point_add(target, compass_rose(i))) == player)
             return;
 
     g->players[player].available_adjacent_squares++;
@@ -189,33 +229,40 @@ bool gamma_area_limit_allows(gamma_t *g, ui32 player, point_t square) {
 }
 
 bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
-    point_t target = make_point(x, y);
+    point_t target = make_point(x + 1, y + 1);
 
     if (g == NULL || player <= 0 || gamma_square_out_of_bounds(g, target) ||
         gamma_square_owner(g, target) != 0)
         return false;
 
+    printf("free fields %d\n", g->players[player].available_adjacent_squares);
+
     if (!gamma_area_limit_allows(g, player, target))
         return false;
 
-    if (!gamma_square_adjacent_to_player(g, target, player))
-        gamma_increase_area_count(g, player);
-
     for (int i = 0; i < 4; i++)
-        update_free_adjacent(g, player, target, COMPASS_ROSE[i]);
+        update_free_adjacent(g, player, target, compass_rose(i));
 
     gamma_give_square_to_player(g, target, player);
+    gamma_increase_area_count(g, player);
 
     for (int i = 0; i < 4; i++) {
-        point_t tmp = point_add(target, COMPASS_ROSE[i]);
+        point_t tmp = point_add(target, compass_rose(i));
 
         if (gamma_square_owner(g, tmp) == player) {
-            if (!are_in_union(g, target, tmp))
-                g->players[player].area_count--;
+            //printf("eluwina1\n");
+            if (!are_in_union(g, target, tmp)) {
+                //printf("eluwina2\n");
+                gamma_decrease_area_count(g, player);
+            }
 
             make_union(g, target, tmp);
         }
     }
+
+    //printf("area count %d\n", g->players[player].area_count);
+
+    return true;
 }
 
 uint64_t gamma_busy_fields(gamma_t *g, uint32_t player) {
@@ -229,8 +276,12 @@ uint64_t gamma_free_fields(gamma_t *g, uint32_t player) {
     if (g == NULL || player <= 0)
         return 0;
 
-    if (gamma_area_limit_reached)
+    //printf("player %d has %d areas\n", player, g->players[player].area_count);
+
+    if (gamma_area_limit_reached(g, player))
         return g->players[player].available_adjacent_squares;
+    else
+        return g->free_squares;
 }
 
 bool gamma_golden_possible(gamma_t *g, uint32_t player) {
@@ -240,7 +291,7 @@ bool gamma_golden_possible(gamma_t *g, uint32_t player) {
     if (g->players[player].spent_golden_move)
         return false;
 
-    for (int i = 1; i <= g->no_of_players; i++)
+    for (ui32 i = 1; i <= g->no_of_players; i++)
         if (i != player && g->players[i].occupied_squares > 0)
             return true;
 
@@ -262,10 +313,10 @@ void gamma_forget_parents_in_area(gamma_t *g, ui32 player, point_t start) {
 
         point_t tmp;
         for (int i = 0; i < 4; i++) {
-            tmp = point_add(square, COMPASS_ROSE[i]);
+            tmp = point_add(square, compass_rose(i));
             if (!gamma_recently_visited(g, tmp) &&
                 gamma_square_owner(g, tmp) == player) {
-                list_add(list, point_add(square, COMPASS_ROSE[i]));
+                list_add(list, point_add(square, compass_rose(i)));
                 gamma_mark_visit(g, tmp);
             }
         }
@@ -278,7 +329,7 @@ void gamma_recalc_areas_and_parents(gamma_t *g, ui32 player, point_t start) {
     list_t list = list_init();
     point_t square;
     for (int i = 0; i < 4; i++) {
-        square = point_add(start, COMPASS_ROSE[i]);
+        square = point_add(start, compass_rose(i));
         if (gamma_square_owner(g, square) == player) {
             list_add(list, square);
             gamma_increase_area_count(g, player);
@@ -289,12 +340,13 @@ void gamma_recalc_areas_and_parents(gamma_t *g, ui32 player, point_t start) {
 
     point_t tmp;
     while (!list_empty(list)) {
+        //printf("pim\n");
         square = list_pop(list);
 
         for (int i = 0; i < 4; i++) {
-            tmp = point_add(square, COMPASS_ROSE[i]);
-
+            tmp = point_add(square, compass_rose(i));
             if (gamma_square_owner(g, tmp) == player) {
+                //printf("tim");
                 if (gamma_recently_visited(g, tmp)) {
                     if (!are_in_union(g, square, tmp)) {
                         gamma_decrease_area_count(g, player);
@@ -303,6 +355,7 @@ void gamma_recalc_areas_and_parents(gamma_t *g, ui32 player, point_t start) {
                 } else {
                     list_add(list, tmp);
                     gamma_mark_visit(g, tmp);
+                    make_union(g, square, tmp);
                 }
             }
         }
@@ -312,7 +365,7 @@ void gamma_recalc_areas_and_parents(gamma_t *g, ui32 player, point_t start) {
 }
 
 bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
-    point_t target = make_point(x, y);
+    point_t target = make_point(x + 1, y + 1);
 
     if (!gamma_golden_possible(g, player) ||
         gamma_square_out_of_bounds(g, target) ||
@@ -324,26 +377,37 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
     ui32 old_owner = gamma_square_owner(g, target);
 
     // bfs czyszczacy f&u
-    gamma_forget_parents_in_area(g, player, target);
+    gamma_forget_parents_in_area(g, old_owner, target);
 
     // zwolnienie pola i zmniejszenie liczby spojnych gracza2
-    g->board[x][y].owner = 0;
-    gamma_decrease_area_count(g, player);
+    g->board[x + 1][y + 1].owner = 0;
+    gamma_decrease_area_count(g, old_owner);
+    g->players[old_owner].occupied_squares--;
+    printf("old owner has %d areas\n", g->players[old_owner].area_count);
+    gamma_mark_square_available(g, target);
+    g->free_squares++;
 
     // puszczenie bfsa naprawiajacego f&u i liczbe spojnych gracza2 na
     // sasiednich polach
-    gamma_recently_visited(g, target);
+    gamma_recalc_areas_and_parents(g, old_owner, target);
+    printf("old owner has %d areas v2\n", g->players[old_owner].area_count);
 
     // sprawdzenie czy gracz 2 przekracza liczbe obszarow
     if (gamma_area_limit_exceeded(g, old_owner)) {
         // tak - gamma_move(pole, gracz2)
-        gamma_move(g, old_owner, x, y);
+        printf("%d sukces?\n", gamma_move(g, old_owner, x, y));
+        printf("old owner has %d areas v3\n", g->players[old_owner].area_count);
+
+        printf("gf %d\n", gamma_free_fields(g, 2));
+        printf("gf %d\n", gamma_free_fields(g, 1));
+
+        return false;
     } else {
         // nie - sprawdzenie czy sasiednie pola wolne sa dalej dostepne dla
         // gracza2
         // gamma_move(pole, gracz)
         for (int i = 0; i < 4; i++) {
-            point_t tmp = point_add(target, COMPASS_ROSE[i]);
+            point_t tmp = point_add(target, compass_rose(i));
             if (gamma_square_owner(g, tmp) != old_owner &&
                 !gamma_square_adjacent_to_player(g, tmp, old_owner)) {
                 g->players[old_owner].available_adjacent_squares--;
@@ -351,32 +415,40 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
         }
 
         gamma_move(g, player, x, y);
+        g->players[player].spent_golden_move = true;
+
+        return true;
     }
 }
 
 char gamma_ith_char_in_square_description(gamma_t *g, ui32 x, ui32 y, ui32 i) {
+    // printf("%d %d \n", x, y);
     ui32 square_width = get_number_length(g->no_of_players) + 1;
     ui32 owner_num = g->board[x][y].owner;
+    // printf("sukcesik\n");
 
     if (i == square_width - 1 && x == g->width)
         return '\n';
 
     if (owner_num == 0) {
-        if (i == square_width / 2)
+        if (i == square_width / 2 - 1)
             return '.';
         else
             return ' ';
     } else {
-        if (i < get_number_length(owner_num) - 1)
-            return get_ith_digit_in_number(owner_num, i);
+        if (i < get_number_length(owner_num))
+            return '0' + get_ith_digit_in_number(owner_num, i);
         else
             return ' ';
     }
 }
 
 char *gamma_board(gamma_t *g) {
+    if (g == NULL)
+        return NULL;
+
     ui32 square_width = get_number_length(g->no_of_players) + 1;
-    ui64 res_size = (square_width * g->width) * g->height;
+    ui64 res_size = (square_width * g->width) * g->height + 1;  //- 19;
 
     char *res = malloc(res_size * sizeof(char));
     if (res == NULL)
@@ -384,10 +456,12 @@ char *gamma_board(gamma_t *g) {
 
     ui64 iter = 0;
 
-    for (int i = g->height; i > 0; i--)
-        for (int j = 1; j <= g->width; j++)
-            for (int k = 0; k < square_width; k++)
-                res[iter] = gamma_ith_char_in_square_description(g, i, j, k);
+    for (ui32 i = g->height; i > 0; i--)
+        for (ui32 j = 1; j <= g->width; j++)
+            for (ui32 k = 0; k < square_width; k++)
+                res[iter++] = gamma_ith_char_in_square_description(g, j, i, k);
 
+    res[iter] = 0;
+    printf("iter = %d\n", iter);
     return res;
 }

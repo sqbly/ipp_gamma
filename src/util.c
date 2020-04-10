@@ -11,6 +11,12 @@ point_t point_add(point_t a, point_t b) {
     return make_point(a.x + b.x, a.y + b.y);
 }
 
+point_t compass_rose(int i) {
+    const point_t COMPASS_ROSE[] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+
+    return COMPASS_ROSE[i];
+}
+
 bool point_equal(point_t a, point_t b) {
     return a.x == b.x && a.y == b.y;
 }
@@ -40,7 +46,7 @@ ui32 **new_uint32_2_dimension_array(ui32 width, ui32 height) {
     if (res == NULL)
         return NULL;
 
-    for (int i = 0; i < width; i++) {
+    for (ui32 i = 0; i < width; i++) {
         res[i] = calloc(height, sizeof(ui32));
         if (res[i] == NULL)
             return NULL;
@@ -53,7 +59,7 @@ void delete_2_dimension_array(void **arr, ui32 size) {
     if (arr == NULL)
         return;
 
-    for (int i = 0; i < size; i++) {
+    for (ui32 i = 0; i < size; i++) {
         if (arr[i] != NULL)
             free(arr[i]);
     }
@@ -62,9 +68,9 @@ void delete_2_dimension_array(void **arr, ui32 size) {
 }
 
 ui32 get_number_length(ui32 num) {
-    int res = 0;
+    ui32 res = 1;
 
-    while (num >= 0) {
+    while (num > 9) {
         num /= 10;
         res++;
     }
