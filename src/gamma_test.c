@@ -63,17 +63,12 @@ int main() {
     assert(gamma_move(g, 1, 0, 2));
     assert(gamma_move(g, 1, 0, 9));
     assert(!gamma_move(g, 1, 5, 5));
-    printf("%d\n", gamma_free_fields(g, 1));
     assert(gamma_free_fields(g, 1) == 6);
     assert(gamma_move(g, 1, 0, 1));
     assert(gamma_free_fields(g, 1) == 95);
-    printf("%d\n", gamma_free_fields(g, 1));
     assert(gamma_move(g, 1, 5, 5));
-    printf("%d\n", gamma_free_fields(g, 1));
     assert(!gamma_move(g, 1, 6, 6));
-    printf("%d\n", gamma_free_fields(g, 1));
     assert(gamma_busy_fields(g, 1) == 5);
-    printf("%d\n", gamma_free_fields(g, 1));
     assert(gamma_free_fields(g, 1) == 10);
     assert(gamma_move(g, 2, 2, 1));
     assert(gamma_move(g, 2, 1, 1));
@@ -85,7 +80,6 @@ int main() {
     assert(gamma_golden_move(g, 2, 5, 5));
     assert(!gamma_golden_possible(g, 2));
     assert(gamma_move(g, 2, 6, 6));
-    printf("%d\n", gamma_free_fields(g, 2));
     assert(gamma_busy_fields(g, 1) == 4);
     assert(gamma_free_fields(g, 1) == 91);
     assert(gamma_busy_fields(g, 2) == 5);
@@ -94,19 +88,12 @@ int main() {
     assert(gamma_busy_fields(g, 1) == 5);
     assert(gamma_free_fields(g, 1) == 8);
     assert(gamma_busy_fields(g, 2) == 4);
-    printf("%d\n", gamma_free_fields(g, 2));
-    printf("prawie sukces\n");
     assert(gamma_free_fields(g, 2) == 10);
-    printf("sukces\n");
-
     char *p = gamma_board(g);
-    printf("yeah\n");
-    assert(p);
-    printf("pasmo sukcesow\n");
-    printf("%s", p);
 
-    printf("dupinson\n");
-    printf("dupinson\n");
+    assert(p);
+
+    printf("%s", p);
 
     assert(strcmp(p, board) == 0);
     free(p);

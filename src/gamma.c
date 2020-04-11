@@ -1,5 +1,7 @@
 #include "gamma.h"
 
+#include <stdio.h>
+
 typedef struct player {
     ui64 occupied_squares, available_adjacent_squares, area_count;
 
@@ -67,7 +69,7 @@ void gamma_delete(gamma_t *g) {
 
     free(g->players);
 
-    delete_2_dimension_array(g->board, g->width + 1);
+    delete_2_dimension_array((void **)g->board, g->width + 1);
 
     free(g);
 }
@@ -235,8 +237,6 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
         gamma_square_owner(g, target) != 0)
         return false;
 
-    printf("free fields %d\n", g->players[player].available_adjacent_squares);
-
     if (!gamma_area_limit_allows(g, player, target))
         return false;
 
@@ -250,17 +250,13 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
         point_t tmp = point_add(target, compass_rose(i));
 
         if (gamma_square_owner(g, tmp) == player) {
-            //printf("eluwina1\n");
             if (!are_in_union(g, target, tmp)) {
-                //printf("eluwina2\n");
                 gamma_decrease_area_count(g, player);
             }
 
             make_union(g, target, tmp);
         }
     }
-
-    //printf("area count %d\n", g->players[player].area_count);
 
     return true;
 }
@@ -275,8 +271,6 @@ uint64_t gamma_busy_fields(gamma_t *g, uint32_t player) {
 uint64_t gamma_free_fields(gamma_t *g, uint32_t player) {
     if (g == NULL || player <= 0)
         return 0;
-
-    //printf("player %d has %d areas\n", player, g->players[player].area_count);
 
     if (gamma_area_limit_reached(g, player))
         return g->players[player].available_adjacent_squares;
@@ -340,13 +334,11 @@ void gamma_recalc_areas_and_parents(gamma_t *g, ui32 player, point_t start) {
 
     point_t tmp;
     while (!list_empty(list)) {
-        //printf("pim\n");
         square = list_pop(list);
 
         for (int i = 0; i < 4; i++) {
             tmp = point_add(square, compass_rose(i));
             if (gamma_square_owner(g, tmp) == player) {
-                //printf("tim");
                 if (gamma_recently_visited(g, tmp)) {
                     if (!are_in_union(g, square, tmp)) {
                         gamma_decrease_area_count(g, player);
@@ -383,23 +375,18 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
     g->board[x + 1][y + 1].owner = 0;
     gamma_decrease_area_count(g, old_owner);
     g->players[old_owner].occupied_squares--;
-    printf("old owner has %d areas\n", g->players[old_owner].area_count);
     gamma_mark_square_available(g, target);
     g->free_squares++;
 
     // puszczenie bfsa naprawiajacego f&u i liczbe spojnych gracza2 na
     // sasiednich polach
     gamma_recalc_areas_and_parents(g, old_owner, target);
-    printf("old owner has %d areas v2\n", g->players[old_owner].area_count);
 
     // sprawdzenie czy gracz 2 przekracza liczbe obszarow
     if (gamma_area_limit_exceeded(g, old_owner)) {
         // tak - gamma_move(pole, gracz2)
-        printf("%d sukces?\n", gamma_move(g, old_owner, x, y));
-        printf("old owner has %d areas v3\n", g->players[old_owner].area_count);
 
-        printf("gf %d\n", gamma_free_fields(g, 2));
-        printf("gf %d\n", gamma_free_fields(g, 1));
+        gamma_move(g, old_owner, x, y);
 
         return false;
     } else {
@@ -422,10 +409,8 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
 }
 
 char gamma_ith_char_in_square_description(gamma_t *g, ui32 x, ui32 y, ui32 i) {
-    // printf("%d %d \n", x, y);
     ui32 square_width = get_number_length(g->no_of_players) + 1;
     ui32 owner_num = g->board[x][y].owner;
-    // printf("sukcesik\n");
 
     if (i == square_width - 1 && x == g->width)
         return '\n';
@@ -448,7 +433,7 @@ char *gamma_board(gamma_t *g) {
         return NULL;
 
     ui32 square_width = get_number_length(g->no_of_players) + 1;
-    ui64 res_size = (square_width * g->width) * g->height + 1;  //- 19;
+    ui64 res_size = (square_width * g->width) * g->height + 1;
 
     char *res = malloc(res_size * sizeof(char));
     if (res == NULL)
@@ -462,6 +447,5 @@ char *gamma_board(gamma_t *g) {
                 res[iter++] = gamma_ith_char_in_square_description(g, j, i, k);
 
     res[iter] = 0;
-    printf("iter = %d\n", iter);
     return res;
 }
