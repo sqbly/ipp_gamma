@@ -24,16 +24,16 @@
  * Tak ma wyglądać plansza po wykonaniu wszystkich testów.
  */
 static const char board[] =
-    "1 . . . . . . . . .\n"
-    ". . . . . . . . . .\n"
-    ". . . . . . . . . .\n"
-    ". . . . . . 2 . . .\n"
-    ". . . . . 2 . . . .\n"
-    ". . . . . . . . . .\n"
-    ". . . . . . . . . .\n"
-    "1 . . . . . . . . .\n"
-    "1 2 2 1 . . . . . .\n"
-    "1 . . . . . . . . .\n";
+    "1.........\n"
+    "..........\n"
+    "..........\n"
+    "......2...\n"
+    ".....2....\n"
+    "..........\n"
+    "..........\n"
+    "1.........\n"
+    "1221......\n"
+    "1.........\n";
 
 /** @brief Testuje silnik gry gamma.
  * Przeprowadza przykładowe testy silnika gry gamma.

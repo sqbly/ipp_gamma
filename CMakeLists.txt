@@ -10,7 +10,7 @@ endif ()
 set_property(GLOBAL PROPERTY RULE_MESSAGES OFF)
 
 # Chcemy zobaczyć polecenia wywołane przez make.
-set(CMAKE_VERBOSE_MAKEFILE ON)
+# set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # Ustawiamy wspólne opcje kompilowania dla wszystkich wariantów projektu.
 set(CMAKE_C_FLAGS "-std=c11 -Wall -Wextra")
@@ -27,6 +27,7 @@ set(SOURCE_FILES
     src/list.h 
     src/util.c 
     src/util.h
+    #src/gamma_testing.c
     src/gamma_test.c)
 
 # Wskazujemy biblioteki.
