@@ -1,46 +1,95 @@
+/** @file
+ * Implementacja klasy z nagłówka gamma.h .
+ *
+ * @author Marcin Peczarski <marpe@mimuw.edu.pl>
+ * @copyright Uniwersytet Warszawski
+ * @date 18.03.2020
+ */
+
 #include "gamma.h"
 
-#include <stdio.h>
-
+/** Struktura przechowująca stan gracza.
+ */
 typedef struct player {
-    ui64 occupied_fields, available_adjacent_fields, area_count;
+    bool spent_golden_move;  ///< czy użył złotego ruchu
 
-    bool spent_golden_move;
+    ui64 occupied_fields;            ///< ile pól posiada,
+    ui64 available_adjacent_fields;  ///< ile wolnych pól przylega do pionków
+                                     ///< gracza,
+    ui64 area_count;                 ///< liczba różnych obszarów gracza.
 
 } player_t;
 
+/** Struktura przechowująca stan pola na planszy.
+ */
 typedef struct field {
-    ui32 owner, last_visit;
+    ui32 owner;       ///< numer właściciela,
+    ui32 last_visit;  ///< numer ostatniej 'wizyty' przeszukiwaniem grafu,
 
-    ui64 rank;
+    ui64 rank;  ///< ranga obszaru, do którego należy pole,
 
-    struct field *parent;
+    struct field *parent;  ///< wskaźnik na reprezentanta danego pola.
 
 } field_t;
 
+/**
+ * Struktura przechowująca stan gry.
+ */
 typedef struct gamma {
-    ui32 width, height, no_of_players, max_area_count, bfs_calls;
+    ui32 width;           ///< szerokość planszy
+    ui32 height;          ///< wysokość planszy
+    ui32 no_of_players;   ///< liczba graczy
+    ui32 max_area_count;  ///< maksymalna liczba obszarów, jakie może zająć
+                          ///< jeden gracz
+    ui32 bfs_calls;       ///< liczba wywołań przeszukiwania wszerz
 
-    ui64 free_fields;
+    ui64 free_fields;  ///< liczba wolnych pól na planszy
 
-    player_t *players;
+    player_t *players;  ///< tablica przechowująca stany graczy
 
-    field_t **board;
+    field_t **board;  ///< tablica dwuwymiarowa przechowująca stany pól
 
 } gamma_t;
 
+/** @brief Sprawdza czy pole znajduje się na planszy.
+ * Sprawdza czy pole o podanych współrzędnych znajduje się na planszy.
+ *
+ * @param[in] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] field   – struktura przechowująca informacje o polu.
+ *
+ * @return Wartość @p true, jeśli pole o podanych współrzędnych znajduje się na
+ * planszy, a @p false w przeciwnym przypadku.
+ */
+bool gamma_field_out_of_bounds(gamma_t *g, point_t field);
+
 // Find Union
 
-field_t *find(gamma_t *g, field_t *a) {
-    if (a == a->parent)
+/** @brief Podaje reprezentanta podanego pola.
+ * Podaje reprezentanta zbioru, w którym znajduje się pole wskazane przez @p a .
+ *
+ * @param[in] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] a       – wskaźnik na strukturę przechowująca informacje o polu.
+ *
+ * @return Wskaźnik na pole będące reprezentantem pola wskazanego przez
+ * @p field .
+ */
+field_t *f_u_find(gamma_t *g, field_t *a) {
+    if (a == NULL || a == a->parent)
         return a;
 
-    return a->parent = find(g, a->parent);
+    return a->parent = f_u_find(g, a->parent);
 }
 
-void union_fields(gamma_t *g, field_t *a, field_t *b) {
-    field_t *a_rep = find(g, a);
-    field_t *b_rep = find(g, b);
+/** @brief Łączy zbiory, do których należą wskazane dwa pola.
+ * Łączy zbiory, do których należą pola wskazane przez @p a i @p b .
+ *
+ * @param[in,out] g   – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] a   – wskaźnik na strukturę przechowującą informacje o 1. polu,
+ * @param[in] b   – wskaźnik na strukturę przechowującą informacje o 2. polu.
+ */
+void f_u_union(gamma_t *g, field_t *a, field_t *b) {
+    field_t *a_rep = f_u_find(g, a);
+    field_t *b_rep = f_u_find(g, b);
 
     if (a_rep == b_rep)
         return;
@@ -54,21 +103,45 @@ void union_fields(gamma_t *g, field_t *a, field_t *b) {
     }
 }
 
-bool are_in_union(gamma_t *g, point_t a, point_t b) {
+/** @brief Sprawdza, czy dwa pola należą do jednego zbioru.
+ * Sprawdza, pola @p a i @p b należą do tego samego zbioru.
+ *
+ * @param[in] g         – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] a         – struktura przechowująca informacje o 1. polu,
+ * @param[in] b         – struktura przechowująca informacje o 2. polu.
+ *
+ * @return Wartość @p true jeśli pola należą do tego samego zbioru, @p false w
+ * przeciwnym przypadku.
+ */
+bool gamma_are_in_union(gamma_t *g, point_t a, point_t b) {
     field_t *a_field = &g->board[a.x][a.y];
     field_t *b_field = &g->board[b.x][b.y];
 
-    return find(g, a_field) == find(g, b_field);
+    return f_u_find(g, a_field) == f_u_find(g, b_field);
 }
 
-void make_union(gamma_t *g, point_t a, point_t b) {
-    union_fields(g, &g->board[a.x][a.y], &g->board[b.x][b.y]);
+/** @brief Łączy zbiory, do których należą dwa pola.
+ * Łączy zbiory, do których należą pola @p a i @p b .
+ *
+ * @param[in,out] g   – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] a       – struktura przechowującą informacje o 1. polu,
+ * @param[in] b       – struktura przechowującą informacje o 2. polu.
+ */
+void gamma_union_fields(gamma_t *g, point_t a, point_t b) {
+    f_u_union(g, &g->board[a.x][a.y], &g->board[b.x][b.y]);
 }
-
-bool gamma_field_out_of_bounds(gamma_t *g, point_t field);
 
 // Gettery
 
+/** @brief Podaje właściciela pola.
+ * Podaje numer gracza będącego właścicielem pola @p field .
+ *
+ * @param[in] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] field   – struktura przechowująca informacje o polu.
+ *
+ * @return Numer gracza będącego właścicielem pola @p field , lub 0 jeśli któryś
+ * z paremetrów jest niepoprawny.
+ */
 ui32 gamma_field_owner(gamma_t *g, point_t field) {
     if (gamma_field_out_of_bounds(g, field))
         return 0;
@@ -76,6 +149,16 @@ ui32 gamma_field_owner(gamma_t *g, point_t field) {
         return g->board[field.x][field.y].owner;
 }
 
+/** @brief Podaje czas ostatnich odwiedzin pola bfs'em.
+ * Podaje numer porządkowy przeszukiwania grafu, które jako ostatnie
+ * "odwiedziło" podane pole.
+ *
+ * @param[in] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] field   – struktura przechowująca informacje o polu.
+ *
+ * @return Numer ostatniej wizyty pola @p field bfs'em, lub numer ostatniego
+ * wywołania bfs'a jeśli któryś z paremetrów jest niepoprawny.
+ */
 ui32 gamma_field_last_visit(gamma_t *g, point_t field) {
     if (gamma_field_out_of_bounds(g, field))
         return g->bfs_calls;
@@ -83,6 +166,19 @@ ui32 gamma_field_last_visit(gamma_t *g, point_t field) {
         return g->board[field.x][field.y].last_visit;
 }
 
+/** @brief Podaje i-ty znak w opisie pola.
+ * Podaje @p i -ty z kolei znak opisie pola o współrzędnych @p x , @p y .
+ *
+ * @param[in] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] x       – numer kolumny, liczba nieujemna mniejsza od wartości
+ *                      @p width z funkcji @ref gamma_new,
+ * @param[in] y       – numer wiersza, liczba nieujemna mniejsza od wartości
+ *                      @p height z funkcji @ref gamma_new,
+ * @param[in] i       – nr znaku w opisie pola.
+ *
+ * @return i-ty znak w opisie podanego pola jeśli dane są poprawne.
+ * Niezdefiniowane zachowanie dla danych niepoprawnych.
+ */
 char gamma_ith_char_in_field_description(gamma_t *g, ui32 x, ui32 y, ui32 i) {
     ui32 field_width = get_number_length(g->no_of_players);
     if (field_width > 1)
@@ -108,10 +204,21 @@ char gamma_ith_char_in_field_description(gamma_t *g, ui32 x, ui32 y, ui32 i) {
 
 // Checkery
 
+/** @brief Sprawdza czy numer gracza jest poprawny.
+ * Sprawdza czy w rozgrywce wskazanej przez @p g  bierze gracz o numerze
+ * @p player .
+ *
+ * @param[in] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] player  – numer gracza
+ *
+ * @return Wartość @p true jeśli numer gracza jest poprawny, @p false w
+ * przeciwnym przypadku.
+ */
 bool gamma_player_number_correct(gamma_t *g, ui32 player) {
     return player > 0 && player <= g->no_of_players;
 }
 
+// Komentarz przy deklaracji.
 bool gamma_field_out_of_bounds(gamma_t *g, point_t field) {
     if (field.x <= 0 || field.x > g->width || field.y <= 0 ||
         field.y > g->height)
@@ -120,6 +227,16 @@ bool gamma_field_out_of_bounds(gamma_t *g, point_t field) {
         return false;
 }
 
+/** @brief Sprawdza czy pole zostało odwiedzone ostatnim bfs'em.
+ * Sprawdza czy pole @p field zostało odwiedzone w ostatnim przeszukiwaniu pól
+ * wszerz.
+ *
+ * @param[in] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] field   – struktura przechowująca informacje o polu.
+ *
+ * @return Wartość @p true jeśli pole zostało odwiedzone ostatnim bfs'em lub
+ * dane są niepoprawne, @p false w przeciwnym przypadku.
+ */
 bool gamma_field_recently_visited(gamma_t *g, point_t field) {
     if (gamma_field_out_of_bounds(g, field))
         return true;
@@ -127,7 +244,18 @@ bool gamma_field_recently_visited(gamma_t *g, point_t field) {
         return g->board[field.x][field.y].last_visit == g->bfs_calls;
 }
 
-bool gamma_field_adjacent_to_player(gamma_t *g, point_t field, ui32 player) {
+/** @brief Sprawdza czy pole sąsiaduje z pionkami gracza.
+ * Sprawdza czy pole @p field sąsiaduje z jakimkolwiek pionkiem gracza
+ * @p player.
+ *
+ * @param[in] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] player  – numer gracza,
+ * @param[in] field   – struktura przechowująca informacje o polu.
+ *
+ * @return Wartość @p true jeśli dane są poprawne i @p field sąsiaduje z graczem
+ * @p player , @p false w przeciwnym przypadku.
+ */
+bool gamma_field_adjacent_to_player(gamma_t *g, ui32 player, point_t field) {
     if (gamma_field_out_of_bounds(g, field))
         return false;
 
@@ -140,24 +268,75 @@ bool gamma_field_adjacent_to_player(gamma_t *g, point_t field, ui32 player) {
     return target_owner_fields != 0;
 }
 
+/** @brief Sprawdza czy pole jest wolne.
+ * Sprawdza czy na polu @p field można postawić pionek.
+ *
+ * @param[in] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] field   – struktura przechowująca informacje o polu.
+ *
+ * @return Wartość @p true, jeśli pole @p field jest wolne i dane są poprawne, a
+ * @p false w przeciwnym przypadku.
+ */
 bool gamma_field_is_available(gamma_t *g, point_t field) {
     return !gamma_field_out_of_bounds(g, field) &&
            gamma_field_owner(g, field) == 0;
 }
 
+/** @brief Sprawdza czy gracz osiągnął limit obszarów.
+ * Sprawdza czy liczba rozłącznych obszarów, z których składa się zbiór pól
+ * zajętych przez gracza @p player jest równa maksymalnej dopuszczonej liczbie.
+ *
+ * @param[in] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] player  – numer gracza.
+ *
+ * @return Wartość @p true jeśli gracz @p player osiągnął limit obszarów i dane
+ * są poprawne, @p false w przeciwnym przypadku.
+ */
 bool gamma_area_limit_reached(gamma_t *g, ui32 player) {
     return g->players[player].area_count >= g->max_area_count;
 }
 
+/** @brief Sprawdza czy gracz przekroczył limit obszarów.
+ * Sprawdza czy liczba rozłącznych obszarów, z których składa się zbiór pól
+ * zajętych przez gracza @p player przekracza maksymalną dopuszczoną liczbę.
+ *
+ * @param[in] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] player  – numer gracza.
+ *
+ * @return Wartość @p true jeśli gracz @p player przekroczył limit obszarów i
+ * dane są poprawne, @p false w przeciwnym przypadku.
+ */
 bool gamma_area_limit_exceeded(gamma_t *g, ui32 player) {
     return g->players[player].area_count > g->max_area_count;
 }
 
+/** @brief Sprawdza czy gracz może zająć pole nie przekraczając limitu obszarów.
+ * Sprawdza czy liczba rozłącznych obszarów, z których składa się zbiór pól
+ * zajętych przez gracza i pola @p field nie przekracza maksymalnej dopuszczonej
+ * liczby.
+ *
+ * @param[in] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] player  – numer gracza,
+ * @param[in] field   – struktura przechowująca informacje o polu.
+ *
+ * @return Wartość @p true jeśli gracz @p player przekroczyłby limit obszarów po
+ * zajęciu pola @p field i dane są poprawne, @p false w przeciwnym przypadku.
+ */
 bool gamma_area_limit_allows(gamma_t *g, ui32 player, point_t field) {
-    return gamma_field_adjacent_to_player(g, field, player) ||
+    return gamma_field_adjacent_to_player(g, player, field) ||
            !gamma_area_limit_reached(g, player);
 }
 
+/** @brief Sprawdza czy gracz może zająć pole.
+ * Sprawdza czy gracz @p player może zajęć pole @p field nie łamiąc zasad gry.
+ *
+ * @param[in] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] player  – numer gracza,
+ * @param[in] field   – struktura przechowująca informacje o polu.
+ *
+ * @return Wartość @p true jeśli gracz @p player może zająć pole @p field i dane
+ * są poprawne, @p false w przeciwnym przypadku.
+ */
 bool gamma_player_can_take_field(gamma_t *g, ui32 player, point_t field) {
     if (g == NULL || !gamma_player_number_correct(g, player) ||
         gamma_field_out_of_bounds(g, field) ||
@@ -225,10 +404,10 @@ void gamma_union_to_adjacent(gamma_t *g, ui32 player, point_t field) {
         point_t tmp = point_add(field, compass_rose(i));
 
         if (gamma_field_owner(g, tmp) == player) {
-            if (!are_in_union(g, field, tmp))
+            if (!gamma_are_in_union(g, field, tmp))
                 gamma_decrease_area_count(g, player);
 
-            make_union(g, field, tmp);
+            gamma_union_fields(g, field, tmp);
         }
     }
 }
@@ -239,7 +418,7 @@ void gamma_add_available_adjacent(gamma_t *g, ui32 player, point_t field) {
 
         if (gamma_field_owner(g, target) == 0 &&
             !gamma_field_out_of_bounds(g, target) &&
-            !gamma_field_adjacent_to_player(g, target, player))
+            !gamma_field_adjacent_to_player(g, player, target))
             g->players[player].available_adjacent_fields++;
     }
 }
@@ -252,7 +431,7 @@ void gamma_remove_no_longer_available_adjacent(gamma_t *g, ui32 player,
     for (int i = 0; i < 4; i++) {
         point_t tmp = point_add(field, compass_rose(i));
 
-        if (!gamma_field_adjacent_to_player(g, tmp, player) &&
+        if (!gamma_field_adjacent_to_player(g, player, tmp) &&
             gamma_field_is_available(g, tmp))
             g->players[player].available_adjacent_fields--;
     }
@@ -334,14 +513,14 @@ void gamma_recalc_areas_and_parents(gamma_t *g, ui32 player, point_t start) {
 
             if (gamma_field_owner(g, tmp) == player) {
                 if (gamma_field_recently_visited(g, tmp)) {
-                    if (!are_in_union(g, field, tmp))
+                    if (!gamma_are_in_union(g, field, tmp))
                         gamma_decrease_area_count(g, player);
                 } else {
                     list_add(list, tmp);
                     gamma_mark_visit(g, tmp);
                 }
 
-                make_union(g, field, tmp);
+                gamma_union_fields(g, field, tmp);
             }
         }
     }
