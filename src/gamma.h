@@ -13,8 +13,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-//#include "util.h"
 #include "list.h"
+#include "util.h"
 
 /**
  * Struktura przechowująca stan gry.

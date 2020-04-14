@@ -27,8 +27,8 @@ set(SOURCE_FILES
     src/list.h 
     src/util.c 
     src/util.h
-    #src/gamma_testing.c
-    src/gamma_test.c)
+    src/gamma_testing.c)
+    #src/gamma_test.c)
 
 # Wskazujemy biblioteki.
 add_library(util src/util.c src/util.h)
