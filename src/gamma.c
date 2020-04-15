@@ -349,18 +349,46 @@ bool gamma_player_can_take_field(gamma_t *g, ui32 player, point_t field) {
 
 // Settery
 
+/** @brief Zwiększa liczbę obszarów gracza.
+ * Informuje strukturę przechowującą stan gry o zwiększeniu liczby obszarów, na
+ * które składają się pionki gracza @p player . Zakłada poprawność parametrów.
+ *
+ * @param[in,out] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] player      – numer gracza.
+ */
 void gamma_increase_area_count(gamma_t *g, ui32 player) {
     g->players[player].area_count++;
 }
 
+/** @brief Zmniejsza liczbę obszarów gracza.
+ * Informuje strukturę przechowującą stan gry o zmniejszeniu liczby obszarów, na
+ * które składają się pionki gracza @p player . Zakłada poprawność parametrów.
+ *
+ * @param[in,out] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] player      – numer gracza.
+ */
 void gamma_decrease_area_count(gamma_t *g, ui32 player) {
     g->players[player].area_count--;
 }
 
+/** @brief Oznacza pole jako ostatnio odwiedzone.
+ * Zaznacza, że pole @p field zostało odwiedzone w ostatnim przejsciu bfs'a.
+ * Zakłada poprawność parametrów.
+ *
+ * @param[in,out] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] field       – struktura przechowująca informacje o polu.
+ */
 void gamma_mark_visit(gamma_t *g, point_t field) {
     g->board[field.x][field.y].last_visit = g->bfs_calls;
 }
 
+/** @brief Oznacza pole jako zajęte.
+ * Informuje graczy, których pionki sąsiadują z polem @p field , że zostało ono
+ * zajęte. Zakłada poprawność parametrów.
+ *
+ * @param[in,out] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] field       – struktura przechowująca informacje o polu.
+ */
 void gamma_mark_field_unavailable(gamma_t *g, point_t field) {
     ui32 already_updated[4], owner;
     point_t tmp;
@@ -380,6 +408,13 @@ void gamma_mark_field_unavailable(gamma_t *g, point_t field) {
     }
 }
 
+/** @brief Oznacza pole jako wolne.
+ * Informuje graczy, których pionki sąsiadują z polem @p field , że zostało ono
+ * zwolnione. Zakłada poprawność parametrów.
+ *
+ * @param[in,out] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] field       – struktura przechowująca informacje o polu.
+ */
 void gamma_mark_field_available(gamma_t *g, point_t field) {
     ui32 already_updated[4], owner;
     point_t tmp;
@@ -399,6 +434,15 @@ void gamma_mark_field_available(gamma_t *g, point_t field) {
     }
 }
 
+/** @brief Łączy sąsiadujące z polem obszary gracza.
+ * Rozpatruje wszystkie pola sąsiadujące z @p field i łączy obszary tych, które
+ * należą do gracza @p player . Aktualizuje liczbę obszarów gracza @p player .
+ * Nic nie robi jesli parametry są niepoprawne.
+ *
+ * @param[in,out] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] player      – numer gracza,
+ * @param[in] field       – struktura przechowująca informacje o polu.
+ */
 void gamma_union_to_adjacent(gamma_t *g, ui32 player, point_t field) {
     for (int i = 0; i < 4; i++) {
         point_t tmp = point_add(field, compass_rose(i));
@@ -412,6 +456,17 @@ void gamma_union_to_adjacent(gamma_t *g, ui32 player, point_t field) {
     }
 }
 
+/** @brief Aktualizuje informacje o wolnych polach sąsiadujących z pionkami
+ * gracza po zajęciu pola.
+ * Rozpatruje wszystkie pola sąsiadujące z @p field i aktualizuje liczbę pól,
+ * które gracz @p player może zająć po zajęciu pola @p field bez zwiększania
+ * liczby obszarów. Pole musi zostać zajęte po wywołaniu funkcji. Nic nie robi
+ * jesli parametry są niepoprawne.
+ *
+ * @param[in,out] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] player      – numer gracza,
+ * @param[in] field       – struktura przechowująca informacje o polu.
+ */
 void gamma_add_available_adjacent(gamma_t *g, ui32 player, point_t field) {
     for (int i = 0; i < 4; i++) {
         point_t target = point_add(field, compass_rose(i));
@@ -423,6 +478,17 @@ void gamma_add_available_adjacent(gamma_t *g, ui32 player, point_t field) {
     }
 }
 
+/** @brief Aktualizuje informacje o wolnych polach sąsiadujących z pionkami
+ * gracza po zwolnieniu pola.
+ * Rozpatruje wszystkie pola sąsiadujące z @p field i aktualizuje liczbę pól,
+ * które gracz @p player może zająć po zwolnieniu pola @p field bez zwiększania
+ * liczby obszarów. Pole musi zostać zwolnione przed wywołaniem funkcji. Nic nie
+ * robi jesli parametry są niepoprawne.
+ *
+ * @param[in,out] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] player      – numer gracza,
+ * @param[in] field       – struktura przechowująca informacje o polu.
+ */
 void gamma_remove_no_longer_available_adjacent(gamma_t *g, ui32 player,
                                                point_t field) {
     if (gamma_field_out_of_bounds(g, field))
@@ -437,6 +503,16 @@ void gamma_remove_no_longer_available_adjacent(gamma_t *g, ui32 player,
     }
 }
 
+/** @brief Oznacza pole jako zajęte i aktualizuje dane w strukturze (poza liczbą
+ * obszarów i wolnymi sąsiadującymi).
+ * Zmienia stan gry wskazywanej przez @p g na taki, w którym gracz @p player
+ * zajął pole @p field. Aktualizuje wszystkie dane poza liczbą obszarów i liczbą
+ * pól, które gracz może zająć bez zwiększania liczby obszarów.
+ *
+ * @param[in,out] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] player      – numer gracza,
+ * @param[in] field       – struktura przechowująca informacje o polu.
+ */
 void gamma_mark_players_ownership(gamma_t *g, ui32 player, point_t field) {
     gamma_mark_field_unavailable(g, field);
 
@@ -449,6 +525,16 @@ void gamma_mark_players_ownership(gamma_t *g, ui32 player, point_t field) {
     g->free_fields--;
 }
 
+/** @brief Oznacza pole jako zwolnione i aktualizuje dane w strukturze (poza
+ * liczbą obszarów).
+ * Zmienia stan gry wskazywanej przez @p g na taki, w którym
+ * gracz @p player zwolnił pole @p field. Aktualizuje wszystkie dane poza liczbą
+ * obszarów.
+ *
+ * @param[in,out] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] player      – numer gracza,
+ * @param[in] field       – struktura przechowująca informacje o polu.
+ */
 void gamma_remove_players_ownership(gamma_t *g, ui32 player, point_t field) {
     g->board[field.x][field.y].owner = 0;
 
@@ -463,6 +549,15 @@ void gamma_remove_players_ownership(gamma_t *g, ui32 player, point_t field) {
     g->free_fields++;
 }
 
+/** @brief Resetuje reprezentantów wszystkich pionków należących do podanego
+ * obszaru.
+ * Dla każdego pola, które należy do gracza @p player i znajduje się w tym samym
+ * obszarze co pole @p start ustawia reprezentanta tego pola na je same.
+ *
+ * @param[in,out] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] player      – numer gracza,
+ * @param[in] start       – struktura przechowująca informacje o polu.
+ */
 void gamma_forget_parents_in_area(gamma_t *g, ui32 player, point_t start) {
     list_t *list = list_init();
     list_add(list, start);
@@ -491,6 +586,17 @@ void gamma_forget_parents_in_area(gamma_t *g, ui32 player, point_t start) {
     list_delete(list);
 }
 
+/** @brief Oblicza reprezentantów wszystkich pól należących do sąsiadujących
+ * obszarów.
+ * Łączy w obszary wszystkie pionki, które należą do gracza @p player i
+ * sąsiadują z polem @p start bezpośrednio lub pośrednio przez inne pionki
+ * gracza @p player . Aktualizuje liczbę rozłącznych obszarów, na które składa
+ * się zbior pól zajętych przez gracza @p player .
+ *
+ * @param[in,out] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] player      – numer gracza,
+ * @param[in] start       – struktura przechowująca informacje o polu.
+ */
 void gamma_recalc_areas_and_parents(gamma_t *g, ui32 player, point_t start) {
     list_t *list = list_init();
     point_t field;

@@ -93,8 +93,6 @@ int main() {
 
     assert(p);
 
-    printf("%s", p);
-
     assert(strcmp(p, board) == 0);
     free(p);
 
