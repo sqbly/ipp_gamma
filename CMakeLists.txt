@@ -10,7 +10,7 @@ endif ()
 set_property(GLOBAL PROPERTY RULE_MESSAGES OFF)
 
 # Chcemy zobaczyć polecenia wywołane przez make.
-# set(CMAKE_VERBOSE_MAKEFILE ON)
+set(CMAKE_VERBOSE_MAKEFILE ON)
 
 # Ustawiamy wspólne opcje kompilowania dla wszystkich wariantów projektu.
 set(CMAKE_C_FLAGS "-std=c11 -Wall -Wextra")
@@ -29,16 +29,8 @@ set(SOURCE_FILES
     src/util.h
     src/gamma_test.c)
 
-# Wskazujemy biblioteki.
-add_library(util src/util.c src/util.h)
-add_library(list src/list.c src/list.h)
-
-# Wymagane dołączenia bibliotek 
-target_link_libraries(list util)
-
 # Wskazujemy plik wykonywalny.
 add_executable(gamma ${SOURCE_FILES})
-target_link_libraries(gamma list util)
 
 # Dodajemy obsługę Doxygena: sprawdzamy, czy jest zainstalowany i jeśli tak to:
 find_package(Doxygen)
