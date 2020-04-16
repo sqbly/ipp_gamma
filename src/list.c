@@ -60,7 +60,8 @@ void list_add(list_t *l, point_t a) {
     if (l->back == NULL) {
         l->back = malloc(sizeof(node_t));
         check_alloc(l->back);
-    } else {
+    }
+    else {
         l->back->next = malloc(sizeof(node_t));
         check_alloc(l->back->next);
 

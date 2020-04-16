@@ -98,7 +98,8 @@ void f_u_union(gamma_t *g, field_t *a, field_t *b) {
         b_rep->parent = a_rep->parent;
         if (a_rep->rank == b_rep->rank)
             a_rep->rank++;
-    } else {
+    }
+    else {
         a_rep->parent = b_rep->parent;
     }
 }
@@ -194,7 +195,8 @@ char gamma_ith_char_in_field_description(gamma_t *g, ui32 x, ui32 y, ui32 i) {
             return '.';
         else
             return ' ';
-    } else {
+    }
+    else {
         if (i < get_number_length(owner_num))
             return get_ith_digit_in_number(owner_num, i);
         else
@@ -621,7 +623,8 @@ void gamma_recalc_areas_and_parents(gamma_t *g, ui32 player, point_t start) {
                 if (gamma_field_recently_visited(g, tmp)) {
                     if (!gamma_are_in_union(g, field, tmp))
                         gamma_decrease_area_count(g, player);
-                } else {
+                }
+                else {
                     list_add(list, tmp);
                     gamma_mark_visit(g, tmp);
                 }
@@ -720,7 +723,8 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
         gamma_move(g, old_owner, x, y);
 
         return false;
-    } else {
+    }
+    else {
         gamma_move(g, player, x, y);
         g->players[player].spent_golden_move = true;
 
