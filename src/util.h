@@ -39,8 +39,8 @@ point_t make_point(uint32_t x, uint32_t y);
 
 /** @brief Dodaje współrzędne dwóch punktów.
  *
- * @param[in] a       – współrzędna na osi odciętych,
- * @param[in] b       – współrzędna na osi rzędnych.
+ * @param[in] a       – pierwszy czynnik,
+ * @param[in] b       – drugi czynnik.
  *
  * @return Punkt o współrzędnych będących sumami współrzędnych punktów @p a i
  * @p b .
@@ -77,7 +77,7 @@ bool point_equal(point_t a, point_t b);
 
 /** @brief Usuwa tablice dwuwymiarową.
  * Usuwa z pamięci wskazywaną przez @p arr tablicę dwuwymiarową dowolnego typu o
- * rozmiarze @p size na ?.
+ * @p size wierszach.
  *
  * @param[in] arr       – tablica do usunięcia,
  * @param[in] size      – długość w pierwszym wymiarze.

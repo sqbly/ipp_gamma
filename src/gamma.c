@@ -217,6 +217,9 @@ char gamma_ith_char_in_field_description(gamma_t *g, ui32 x, ui32 y, ui32 i) {
  * przeciwnym przypadku.
  */
 bool gamma_player_number_correct(gamma_t *g, ui32 player) {
+    if (g == NULL)
+        return false;
+
     return player > 0 && player <= g->no_of_players;
 }
 
@@ -286,7 +289,8 @@ bool gamma_field_is_available(gamma_t *g, point_t field) {
 
 /** @brief Sprawdza czy gracz osiągnął limit obszarów.
  * Sprawdza czy liczba rozłącznych obszarów, z których składa się zbiór pól
- * zajętych przez gracza @p player jest równa maksymalnej dopuszczonej liczbie.
+ * zajętych przez gracza @p player jest większa lub równa maksymalnej
+ * dopuszczonej liczbie.
  *
  * @param[in] g       – wskaźnik na strukturę przechowującą stan gry,
  * @param[in] player  – numer gracza.
@@ -393,12 +397,12 @@ void gamma_mark_visit(gamma_t *g, point_t field) {
  */
 void gamma_mark_field_unavailable(gamma_t *g, point_t field) {
     ui32 already_updated[4], owner;
-    point_t tmp;
+    point_t adjacent;
     bool updated;
     for (int i = 0; i < 4; i++) {
         updated = false;
-        tmp = point_add(field, compass_rose(i));
-        owner = gamma_field_owner(g, tmp);
+        adjacent = point_add(field, compass_rose(i));
+        owner = gamma_field_owner(g, adjacent);
         already_updated[i] = owner;
 
         for (int j = 0; j < i; j++)
@@ -419,12 +423,12 @@ void gamma_mark_field_unavailable(gamma_t *g, point_t field) {
  */
 void gamma_mark_field_available(gamma_t *g, point_t field) {
     ui32 already_updated[4], owner;
-    point_t tmp;
+    point_t adjacent;
     bool updated;
     for (int i = 0; i < 4; i++) {
         updated = false;
-        tmp = point_add(field, compass_rose(i));
-        owner = gamma_field_owner(g, tmp);
+        adjacent = point_add(field, compass_rose(i));
+        owner = gamma_field_owner(g, adjacent);
         already_updated[i] = owner;
 
         for (int j = 0; j < i; j++)
@@ -447,13 +451,13 @@ void gamma_mark_field_available(gamma_t *g, point_t field) {
  */
 void gamma_union_to_adjacent(gamma_t *g, ui32 player, point_t field) {
     for (int i = 0; i < 4; i++) {
-        point_t tmp = point_add(field, compass_rose(i));
+        point_t adjacent = point_add(field, compass_rose(i));
 
-        if (gamma_field_owner(g, tmp) == player) {
-            if (!gamma_are_in_union(g, field, tmp))
+        if (gamma_field_owner(g, adjacent) == player) {
+            if (!gamma_are_in_union(g, field, adjacent))
                 gamma_decrease_area_count(g, player);
 
-            gamma_union_fields(g, field, tmp);
+            gamma_union_fields(g, field, adjacent);
         }
     }
 }
@@ -470,6 +474,9 @@ void gamma_union_to_adjacent(gamma_t *g, ui32 player, point_t field) {
  * @param[in] field       – struktura przechowująca informacje o polu.
  */
 void gamma_add_available_adjacent(gamma_t *g, ui32 player, point_t field) {
+    if (gamma_field_out_of_bounds(g, field))
+        return;
+
     for (int i = 0; i < 4; i++) {
         point_t target = point_add(field, compass_rose(i));
 
@@ -497,10 +504,10 @@ void gamma_remove_no_longer_available_adjacent(gamma_t *g, ui32 player,
         return;
 
     for (int i = 0; i < 4; i++) {
-        point_t tmp = point_add(field, compass_rose(i));
+        point_t adjacent = point_add(field, compass_rose(i));
 
-        if (!gamma_field_adjacent_to_player(g, player, tmp) &&
-            gamma_field_is_available(g, tmp))
+        if (!gamma_field_adjacent_to_player(g, player, adjacent) &&
+            gamma_field_is_available(g, adjacent))
             g->players[player].available_adjacent_fields--;
     }
 }
@@ -544,9 +551,9 @@ void gamma_remove_players_ownership(gamma_t *g, ui32 player, point_t field) {
 
     gamma_decrease_area_count(g, player);
 
-    g->players[player].occupied_fields--;
-
     gamma_mark_field_available(g, field);
+
+    g->players[player].occupied_fields--;
 
     g->free_fields++;
 }
@@ -560,7 +567,7 @@ void gamma_remove_players_ownership(gamma_t *g, ui32 player, point_t field) {
  * @param[in] player      – numer gracza,
  * @param[in] start       – struktura przechowująca informacje o polu.
  */
-void gamma_forget_parents_in_area(gamma_t *g, ui32 player, point_t start) {
+void gamma_reset_parents_in_area(gamma_t *g, ui32 player, point_t start) {
     list_t *list = list_init();
     list_add(list, start);
 
@@ -574,13 +581,13 @@ void gamma_forget_parents_in_area(gamma_t *g, ui32 player, point_t start) {
         g->board[field.x][field.y].parent = &g->board[field.x][field.y];
         g->board[field.x][field.y].rank = 0;
 
-        point_t tmp;
+        point_t adjacent;
         for (int i = 0; i < 4; i++) {
-            tmp = point_add(field, compass_rose(i));
-            if (!gamma_field_recently_visited(g, tmp) &&
-                gamma_field_owner(g, tmp) == player) {
+            adjacent = point_add(field, compass_rose(i));
+            if (!gamma_field_recently_visited(g, adjacent) &&
+                gamma_field_owner(g, adjacent) == player) {
                 list_add(list, point_add(field, compass_rose(i)));
-                gamma_mark_visit(g, tmp);
+                gamma_mark_visit(g, adjacent);
             }
         }
     }
@@ -612,24 +619,24 @@ void gamma_recalc_areas_and_parents(gamma_t *g, ui32 player, point_t start) {
 
     g->bfs_calls++;
 
-    point_t tmp;
+    point_t adjacent;
     while (!list_empty(list)) {
         field = list_pop(list);
 
         for (int i = 0; i < 4; i++) {
-            tmp = point_add(field, compass_rose(i));
+            adjacent = point_add(field, compass_rose(i));
 
-            if (gamma_field_owner(g, tmp) == player) {
-                if (gamma_field_recently_visited(g, tmp)) {
-                    if (!gamma_are_in_union(g, field, tmp))
+            if (gamma_field_owner(g, adjacent) == player) {
+                if (gamma_field_recently_visited(g, adjacent)) {
+                    if (!gamma_are_in_union(g, field, adjacent))
                         gamma_decrease_area_count(g, player);
                 }
                 else {
-                    list_add(list, tmp);
-                    gamma_mark_visit(g, tmp);
+                    list_add(list, adjacent);
+                    gamma_mark_visit(g, adjacent);
                 }
 
-                gamma_union_fields(g, field, tmp);
+                gamma_union_fields(g, field, adjacent);
             }
         }
     }
@@ -713,7 +720,7 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
 
     ui32 old_owner = gamma_field_owner(g, target);
 
-    gamma_forget_parents_in_area(g, old_owner, target);
+    gamma_reset_parents_in_area(g, old_owner, target);
 
     gamma_remove_players_ownership(g, old_owner, target);
 
@@ -750,7 +757,7 @@ uint64_t gamma_free_fields(gamma_t *g, uint32_t player) {
 }
 
 bool gamma_golden_possible(gamma_t *g, uint32_t player) {
-    if (g == NULL || !gamma_player_number_correct(g, player))
+    if (!gamma_player_number_correct(g, player))
         return false;
 
     if (g->players[player].spent_golden_move)
