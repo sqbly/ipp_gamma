@@ -1,9 +1,8 @@
 /** @file
  * Implementacja klasy z nagłówka gamma.h .
  *
- * @author Marcin Peczarski <marpe@mimuw.edu.pl>
- * @copyright Uniwersytet Warszawski
- * @date 18.03.2020
+ * @author Konrad Skublicki <ks418414@students.mimuw.edu.pl>
+ * @date 14.04.2020
  */
 
 #include "gamma.h"
@@ -219,8 +218,8 @@ char gamma_ith_char_in_field_description(gamma_t *g, ui32 x, ui32 y, ui32 i) {
 bool gamma_player_number_correct(gamma_t *g, ui32 player) {
     if (g == NULL)
         return false;
-
-    return player > 0 && player <= g->no_of_players;
+    else
+        return player > 0 && player <= g->no_of_players;
 }
 
 // Komentarz przy deklaracji.
@@ -742,8 +741,8 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
 uint64_t gamma_busy_fields(gamma_t *g, uint32_t player) {
     if (g == NULL || !gamma_player_number_correct(g, player))
         return 0;
-
-    return g->players[player].occupied_fields;
+    else
+        return g->players[player].occupied_fields;
 }
 
 uint64_t gamma_free_fields(gamma_t *g, uint32_t player) {

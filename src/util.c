@@ -1,5 +1,5 @@
 /** @file
- * Implementacja funkcji pomocniczych z pliku util.h
+ * Implementacja funkcji pomocniczych z pliku util.h .
  *
  * @author Konrad Skublicki <ks418414@students.mimuw.edu.pl>
  * @date 14.04.2020
