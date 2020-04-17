@@ -7,37 +7,26 @@
 
 #include "list.h"
 
-/** Struktura przechowująca element listy.
- */
-typedef struct node {
-    struct node *next;  ///< wskaźnik na następny element listy
-    point_t val;        ///< wartość danego elementu
-} node_t;
-
 /** Struktura przechowująca listę jednokierunkową.
  */
 struct list {
-    node_t *head;  ///< wskaźnik na pierwszy element listy
-    node_t *back;  ///< wskaźnik na ostatni element listy
+    uint64_t size;   ///< zaalokowany rozmiar listy
+    uint64_t head;   ///< indeks pierwszego zajętego elementu
+    uint64_t tail;   ///< indeks następnego wolnego elementu
+    point_t *nodes;  ///< tablica przechowująca elementy listy
 };
 
-/** @brief Sprawdza czy udało się zaalokować pamięć.
- * Sprawdza czy @p ptr wskazuje na miejsce w pamięci.
- * Kończy działanie programu z kodem wyjścia ENOMEM jeśli @p ptr wynosi NULL.
- *
- * @param[in] ptr
- */
-void check_alloc(void *ptr) {
-    if (ptr == NULL)
-        exit(ENOMEM);
-}
-
-list_t *list_init() {
+list_t *list_init(uint64_t size) {
     list_t *res = malloc(sizeof(list_t));
-    check_alloc(res);
+    if (res == NULL)
+        return NULL;
 
-    res->head = NULL;
-    res->back = NULL;
+    res->size = size;
+    res->head = 0;
+    res->tail = 0;
+    res->nodes = calloc(size, sizeof(point_t));
+    if (res->nodes == NULL)
+        return NULL;
 
     return res;
 }
@@ -46,49 +35,37 @@ void list_delete(list_t *l) {
     if (l == NULL)
         return;
 
+    free(l->nodes);
+    l->nodes = NULL;
+
     free(l);
+    l = NULL;
 }
 
 bool list_empty(list_t *l) {
     if (l == NULL)
         return false;
 
-    return l->head == NULL;
+    return l->head == l->tail;
 }
 
 void list_add(list_t *l, point_t a) {
-    if (l->back == NULL) {
-        l->back = malloc(sizeof(node_t));
-        check_alloc(l->back);
-    }
-    else {
-        l->back->next = malloc(sizeof(node_t));
-        check_alloc(l->back->next);
+    l->nodes[l->tail] = a;
 
-        l->back = l->back->next;
-    }
-
-    l->back->val = a;
-    l->back->next = NULL;
-
-    if (list_empty(l))
-        l->head = l->back;
+    l->tail++;
+    if (l->tail == l->size)
+        l->tail = 0;
 }
 
 point_t list_pop(list_t *l) {
     if (list_empty(l))
         return make_point(0, 0);
 
-    point_t res = l->head->val;
+    point_t res = l->nodes[l->head];
 
-    node_t *tmp = l->head;
-
-    l->head = l->head->next;
-
-    free(tmp);
-
-    if (l->head == NULL)
-        l->back = NULL;
+    l->head++;
+    if (l->head == l->size)
+        l->head = 0;
 
     return res;
 }

@@ -10,25 +10,23 @@
 /** Struktura przechowująca stan gracza.
  */
 typedef struct player {
-    bool spent_golden_move;  ///< czy użył złotego ruchu
-
-    ui64 occupied_fields;            ///< ile pól posiada,
+    ui64 occupied_fields;            ///< ile pól posiada
     ui64 available_adjacent_fields;  ///< ile wolnych pól przylega do pionków
-                                     ///< gracza,
-    ui64 area_count;                 ///< liczba różnych obszarów gracza.
+                                     ///< gracza
+    ui64 area_count;                 ///< liczba różnych obszarów gracza
 
+    bool spent_golden_move;  ///< czy użył złotego ruchu
 } player_t;
 
 /** Struktura przechowująca stan pola na planszy.
  */
 typedef struct field {
-    ui32 owner;       ///< numer właściciela,
-    ui32 last_visit;  ///< numer ostatniej 'wizyty' przeszukiwaniem grafu,
+    ui64 rank;  ///< ranga obszaru, do którego należy pole
 
-    ui64 rank;  ///< ranga obszaru, do którego należy pole,
+    ui32 owner;       ///< numer właściciela
+    ui32 last_visit;  ///< numer ostatniej 'wizyty' przeszukiwaniem grafu
 
-    struct field *parent;  ///< wskaźnik na reprezentanta danego pola.
-
+    struct field *parent;  ///< wskaźnik na reprezentanta danego pola
 } field_t;
 
 /**
@@ -47,6 +45,8 @@ typedef struct gamma {
     player_t *players;  ///< tablica przechowująca stany graczy
 
     field_t **board;  ///< tablica dwuwymiarowa przechowująca stany pól
+
+    list_t *list;  ///< lista na potrzeby przeszukiwania grafu
 
 } gamma_t;
 
@@ -567,15 +567,14 @@ void gamma_remove_players_ownership(gamma_t *g, ui32 player, point_t field) {
  * @param[in] start       – struktura przechowująca informacje o polu.
  */
 void gamma_reset_parents_in_area(gamma_t *g, ui32 player, point_t start) {
-    list_t *list = list_init();
-    list_add(list, start);
+    list_add(g->list, start);
 
     g->bfs_calls++;
 
     point_t field;
 
-    while (!list_empty(list)) {
-        field = list_pop(list);
+    while (!list_empty(g->list)) {
+        field = list_pop(g->list);
 
         g->board[field.x][field.y].parent = &g->board[field.x][field.y];
         g->board[field.x][field.y].rank = 0;
@@ -585,13 +584,11 @@ void gamma_reset_parents_in_area(gamma_t *g, ui32 player, point_t start) {
             adjacent = point_add(field, compass_rose(i));
             if (!gamma_field_recently_visited(g, adjacent) &&
                 gamma_field_owner(g, adjacent) == player) {
-                list_add(list, point_add(field, compass_rose(i)));
+                list_add(g->list, point_add(field, compass_rose(i)));
                 gamma_mark_visit(g, adjacent);
             }
         }
     }
-
-    list_delete(list);
 }
 
 /** @brief Oblicza reprezentantów wszystkich pól należących do sąsiadujących
@@ -606,12 +603,11 @@ void gamma_reset_parents_in_area(gamma_t *g, ui32 player, point_t start) {
  * @param[in] start       – struktura przechowująca informacje o polu.
  */
 void gamma_recalc_areas_and_parents(gamma_t *g, ui32 player, point_t start) {
-    list_t *list = list_init();
     point_t field;
     for (int i = 0; i < 4; i++) {
         field = point_add(start, compass_rose(i));
         if (gamma_field_owner(g, field) == player) {
-            list_add(list, field);
+            list_add(g->list, field);
             gamma_increase_area_count(g, player);
         }
     }
@@ -619,8 +615,8 @@ void gamma_recalc_areas_and_parents(gamma_t *g, ui32 player, point_t start) {
     g->bfs_calls++;
 
     point_t adjacent;
-    while (!list_empty(list)) {
-        field = list_pop(list);
+    while (!list_empty(g->list)) {
+        field = list_pop(g->list);
 
         for (int i = 0; i < 4; i++) {
             adjacent = point_add(field, compass_rose(i));
@@ -631,7 +627,7 @@ void gamma_recalc_areas_and_parents(gamma_t *g, ui32 player, point_t start) {
                         gamma_decrease_area_count(g, player);
                 }
                 else {
-                    list_add(list, adjacent);
+                    list_add(g->list, adjacent);
                     gamma_mark_visit(g, adjacent);
                 }
 
@@ -639,8 +635,6 @@ void gamma_recalc_areas_and_parents(gamma_t *g, ui32 player, point_t start) {
             }
         }
     }
-
-    list_delete(list);
 }
 
 // Funkcje eksportowane
@@ -663,17 +657,30 @@ gamma_t *gamma_new(uint32_t width, uint32_t height, uint32_t players,
     res->free_fields = width * height;
 
     res->players = calloc((players + 1), sizeof(player_t));
-    if (res->players == NULL)
+    if (res->players == NULL) {
+        gamma_delete(res);
         return NULL;
+    }
 
-    res->board = malloc((width + 1) * sizeof(field_t *));
-    if (res->board == NULL)
+    res->board = calloc(width + 1, sizeof(field_t *));
+    if (res->board == NULL) {
+        gamma_delete(res);
         return NULL;
+    }
 
     for (ui32 i = 0; i <= width; i++) {
         res->board[i] = calloc((height + 1), sizeof(field_t));
-        if (res->board[i] == NULL)
+        if (res->board[i] == NULL) {
+            gamma_delete(res);
             return NULL;
+        }
+    }
+
+    res->list = list_init(2 * (width + height));
+
+    if (res->list == NULL) {
+        gamma_delete(res);
+        return NULL;
     }
 
     return res;
@@ -684,10 +691,15 @@ void gamma_delete(gamma_t *g) {
         return;
 
     free(g->players);
+    g->players = NULL;
+
+    list_delete(g->list);
 
     delete_2_dimension_array((void **)g->board, g->width + 1);
 
     free(g);
+
+    g = NULL;
 }
 
 bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {

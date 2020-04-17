@@ -36,11 +36,13 @@ void delete_2_dimension_array(void **arr, ui32 size) {
         return;
 
     for (ui32 i = 0; i < size; i++) {
-        if (arr[i] != NULL)
-            free(arr[i]);
+        free(arr[i]);
+        arr[i] = NULL;
     }
 
     free(arr);
+
+    arr = NULL;
 }
 
 ui32 get_number_length(ui32 num) {

@@ -8,8 +8,6 @@
 #ifndef LIST_H
 #define LIST_H
 
-#include <errno.h>
-
 #include "util.h"
 
 /**
@@ -18,14 +16,13 @@
 typedef struct list list_t;
 
 /** @brief Tworzy strukturę przechowującą listę.
- * Alokuje pamięć na nową strukturę listy.
+ * Alokuje pamięć na nową strukturę listy o maksymalnym rozmiarze @p size .
  * Początkowo lista jest pusta.
- * W przypadku niemożności zaalokowania pamięci kończy działanie programu z
- * kodem ENOMEM.
+ * W przypadku niemożności zaalokowania pamięci zwraca NULL.
  *
  * @return Wskaźnik na utworzoną strukturę.
  */
-list_t *list_init();
+list_t *list_init(uint64_t size);
 
 /** @brief Usuwa strukturę przechowującą listę.
  * Usuwa z pamięci strukturę wskazywaną przez @p l.
