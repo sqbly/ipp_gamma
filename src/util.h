@@ -12,13 +12,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-/** Pomocniczy skrót na uint_32_t
- */
-typedef uint32_t ui32;
-/** Pomocniczy skrót na uint_64_t
- */
-typedef uint64_t ui64;
-
 /**
  * Struktura punktu o dwóch współrzędnych całkowitych nieujemnych.
  */

@@ -7,13 +7,15 @@
 
 #include "gamma.h"
 
+#include <stdio.h>
+
 /** Struktura przechowująca stan gracza.
  */
 typedef struct player {
-    ui64 occupied_fields;            ///< ile pól posiada
-    ui64 available_adjacent_fields;  ///< ile wolnych pól przylega do pionków
-                                     ///< gracza
-    ui64 area_count;                 ///< liczba różnych obszarów gracza
+    uint64_t occupied_fields;            ///< ile pól posiada
+    uint64_t available_adjacent_fields;  ///< ile wolnych pól przylega do
+                                         ///< pionków gracza
+    uint64_t area_count;                 ///< liczba różnych obszarów gracza
 
     bool spent_golden_move;  ///< czy użył złotego ruchu
 } player_t;
@@ -21,10 +23,10 @@ typedef struct player {
 /** Struktura przechowująca stan pola na planszy.
  */
 typedef struct field {
-    ui64 rank;  ///< ranga obszaru, do którego należy pole
+    uint64_t rank;  ///< ranga obszaru, do którego należy pole
 
-    ui32 owner;       ///< numer właściciela
-    ui32 last_visit;  ///< numer ostatniej 'wizyty' przeszukiwaniem grafu
+    uint32_t owner;       ///< numer właściciela
+    uint32_t last_visit;  ///< numer ostatniej 'wizyty' przeszukiwaniem grafu
 
     struct field *parent;  ///< wskaźnik na reprezentanta danego pola
 } field_t;
@@ -33,14 +35,14 @@ typedef struct field {
  * Struktura przechowująca stan gry.
  */
 typedef struct gamma {
-    ui32 width;           ///< szerokość planszy
-    ui32 height;          ///< wysokość planszy
-    ui32 no_of_players;   ///< liczba graczy
-    ui32 max_area_count;  ///< maksymalna liczba obszarów, jakie może zająć
-                          ///< jeden gracz
-    ui32 bfs_calls;       ///< liczba wywołań przeszukiwania wszerz
+    uint32_t width;          ///< szerokość planszy
+    uint32_t height;         ///< wysokość planszy
+    uint32_t no_of_players;  ///< liczba graczy
+    uint32_t max_area_count;  ///< maksymalna liczba obszarów, jakie może zająć
+                              ///< jeden gracz
+    uint32_t bfs_calls;  ///< liczba wywołań przeszukiwania wszerz
 
-    ui64 free_fields;  ///< liczba wolnych pól na planszy
+    uint64_t free_fields;  ///< liczba wolnych pól na planszy
 
     player_t *players;  ///< tablica przechowująca stany graczy
 
@@ -142,7 +144,7 @@ void gamma_union_fields(gamma_t *g, point_t a, point_t b) {
  * @return Numer gracza będącego właścicielem pola @p field , lub 0 jeśli któryś
  * z paremetrów jest niepoprawny.
  */
-ui32 gamma_field_owner(gamma_t *g, point_t field) {
+uint32_t gamma_field_owner(gamma_t *g, point_t field) {
     if (gamma_field_out_of_bounds(g, field))
         return 0;
     else
@@ -159,7 +161,7 @@ ui32 gamma_field_owner(gamma_t *g, point_t field) {
  * @return Numer ostatniej wizyty pola @p field bfs'em, lub numer ostatniego
  * wywołania bfs'a jeśli któryś z paremetrów jest niepoprawny.
  */
-ui32 gamma_field_last_visit(gamma_t *g, point_t field) {
+uint32_t gamma_field_last_visit(gamma_t *g, point_t field) {
     if (gamma_field_out_of_bounds(g, field))
         return g->bfs_calls;
     else
@@ -179,12 +181,13 @@ ui32 gamma_field_last_visit(gamma_t *g, point_t field) {
  * @return i-ty znak w opisie podanego pola jeśli dane są poprawne.
  * Niezdefiniowane zachowanie dla danych niepoprawnych.
  */
-char gamma_ith_char_in_field_description(gamma_t *g, ui32 x, ui32 y, ui32 i) {
-    ui32 field_width = get_number_length(g->no_of_players);
+char gamma_ith_char_in_field_description(gamma_t *g, uint32_t x, uint32_t y,
+                                         uint32_t i) {
+    uint32_t field_width = get_number_length(g->no_of_players);
     if (field_width > 1)
         field_width++;
 
-    ui32 owner_num = g->board[x][y].owner;
+    uint32_t owner_num = g->board[x][y].owner;
 
     if (i == field_width && x == g->width)
         return '\n';
@@ -215,7 +218,7 @@ char gamma_ith_char_in_field_description(gamma_t *g, ui32 x, ui32 y, ui32 i) {
  * @return Wartość @p true jeśli numer gracza jest poprawny, @p false w
  * przeciwnym przypadku.
  */
-bool gamma_player_number_correct(gamma_t *g, ui32 player) {
+bool gamma_player_number_correct(gamma_t *g, uint32_t player) {
     if (g == NULL)
         return false;
     else
@@ -259,7 +262,8 @@ bool gamma_field_recently_visited(gamma_t *g, point_t field) {
  * @return Wartość @p true jeśli dane są poprawne i @p field sąsiaduje z graczem
  * @p player , @p false w przeciwnym przypadku.
  */
-bool gamma_field_adjacent_to_player(gamma_t *g, ui32 player, point_t field) {
+bool gamma_field_adjacent_to_player(gamma_t *g, uint32_t player,
+                                    point_t field) {
     if (gamma_field_out_of_bounds(g, field))
         return false;
 
@@ -297,7 +301,7 @@ bool gamma_field_is_available(gamma_t *g, point_t field) {
  * @return Wartość @p true jeśli gracz @p player osiągnął limit obszarów i dane
  * są poprawne, @p false w przeciwnym przypadku.
  */
-bool gamma_area_limit_reached(gamma_t *g, ui32 player) {
+bool gamma_area_limit_reached(gamma_t *g, uint32_t player) {
     return g->players[player].area_count >= g->max_area_count;
 }
 
@@ -311,7 +315,7 @@ bool gamma_area_limit_reached(gamma_t *g, ui32 player) {
  * @return Wartość @p true jeśli gracz @p player przekroczył limit obszarów i
  * dane są poprawne, @p false w przeciwnym przypadku.
  */
-bool gamma_area_limit_exceeded(gamma_t *g, ui32 player) {
+bool gamma_area_limit_exceeded(gamma_t *g, uint32_t player) {
     return g->players[player].area_count > g->max_area_count;
 }
 
@@ -327,7 +331,7 @@ bool gamma_area_limit_exceeded(gamma_t *g, ui32 player) {
  * @return Wartość @p true jeśli gracz @p player przekroczyłby limit obszarów po
  * zajęciu pola @p field i dane są poprawne, @p false w przeciwnym przypadku.
  */
-bool gamma_area_limit_allows(gamma_t *g, ui32 player, point_t field) {
+bool gamma_area_limit_allows(gamma_t *g, uint32_t player, point_t field) {
     return gamma_field_adjacent_to_player(g, player, field) ||
            !gamma_area_limit_reached(g, player);
 }
@@ -342,7 +346,7 @@ bool gamma_area_limit_allows(gamma_t *g, ui32 player, point_t field) {
  * @return Wartość @p true jeśli gracz @p player może zająć pole @p field i dane
  * są poprawne, @p false w przeciwnym przypadku.
  */
-bool gamma_player_can_take_field(gamma_t *g, ui32 player, point_t field) {
+bool gamma_player_can_take_field(gamma_t *g, uint32_t player, point_t field) {
     if (g == NULL || !gamma_player_number_correct(g, player) ||
         gamma_field_out_of_bounds(g, field) ||
         gamma_field_owner(g, field) != 0 ||
@@ -361,7 +365,7 @@ bool gamma_player_can_take_field(gamma_t *g, ui32 player, point_t field) {
  * @param[in,out] g       – wskaźnik na strukturę przechowującą stan gry,
  * @param[in] player      – numer gracza.
  */
-void gamma_increase_area_count(gamma_t *g, ui32 player) {
+void gamma_increase_area_count(gamma_t *g, uint32_t player) {
     g->players[player].area_count++;
 }
 
@@ -372,7 +376,7 @@ void gamma_increase_area_count(gamma_t *g, ui32 player) {
  * @param[in,out] g       – wskaźnik na strukturę przechowującą stan gry,
  * @param[in] player      – numer gracza.
  */
-void gamma_decrease_area_count(gamma_t *g, ui32 player) {
+void gamma_decrease_area_count(gamma_t *g, uint32_t player) {
     g->players[player].area_count--;
 }
 
@@ -395,7 +399,7 @@ void gamma_mark_visit(gamma_t *g, point_t field) {
  * @param[in] field       – struktura przechowująca informacje o polu.
  */
 void gamma_mark_field_unavailable(gamma_t *g, point_t field) {
-    ui32 already_updated[4], owner;
+    uint32_t already_updated[4], owner;
     point_t adjacent;
     bool updated;
     for (int i = 0; i < 4; i++) {
@@ -421,7 +425,7 @@ void gamma_mark_field_unavailable(gamma_t *g, point_t field) {
  * @param[in] field       – struktura przechowująca informacje o polu.
  */
 void gamma_mark_field_available(gamma_t *g, point_t field) {
-    ui32 already_updated[4], owner;
+    uint32_t already_updated[4], owner;
     point_t adjacent;
     bool updated;
     for (int i = 0; i < 4; i++) {
@@ -448,7 +452,7 @@ void gamma_mark_field_available(gamma_t *g, point_t field) {
  * @param[in] player      – numer gracza,
  * @param[in] field       – struktura przechowująca informacje o polu.
  */
-void gamma_union_to_adjacent(gamma_t *g, ui32 player, point_t field) {
+void gamma_union_to_adjacent(gamma_t *g, uint32_t player, point_t field) {
     for (int i = 0; i < 4; i++) {
         point_t adjacent = point_add(field, compass_rose(i));
 
@@ -472,7 +476,7 @@ void gamma_union_to_adjacent(gamma_t *g, ui32 player, point_t field) {
  * @param[in] player      – numer gracza,
  * @param[in] field       – struktura przechowująca informacje o polu.
  */
-void gamma_add_available_adjacent(gamma_t *g, ui32 player, point_t field) {
+void gamma_add_available_adjacent(gamma_t *g, uint32_t player, point_t field) {
     if (gamma_field_out_of_bounds(g, field))
         return;
 
@@ -497,7 +501,7 @@ void gamma_add_available_adjacent(gamma_t *g, ui32 player, point_t field) {
  * @param[in] player      – numer gracza,
  * @param[in] field       – struktura przechowująca informacje o polu.
  */
-void gamma_remove_no_longer_available_adjacent(gamma_t *g, ui32 player,
+void gamma_remove_no_longer_available_adjacent(gamma_t *g, uint32_t player,
                                                point_t field) {
     if (gamma_field_out_of_bounds(g, field))
         return;
@@ -521,7 +525,7 @@ void gamma_remove_no_longer_available_adjacent(gamma_t *g, ui32 player,
  * @param[in] player      – numer gracza,
  * @param[in] field       – struktura przechowująca informacje o polu.
  */
-void gamma_mark_players_ownership(gamma_t *g, ui32 player, point_t field) {
+void gamma_mark_players_ownership(gamma_t *g, uint32_t player, point_t field) {
     gamma_mark_field_unavailable(g, field);
 
     g->board[field.x][field.y].owner = player;
@@ -543,7 +547,8 @@ void gamma_mark_players_ownership(gamma_t *g, ui32 player, point_t field) {
  * @param[in] player      – numer gracza,
  * @param[in] field       – struktura przechowująca informacje o polu.
  */
-void gamma_remove_players_ownership(gamma_t *g, ui32 player, point_t field) {
+void gamma_remove_players_ownership(gamma_t *g, uint32_t player,
+                                    point_t field) {
     g->board[field.x][field.y].owner = 0;
 
     gamma_remove_no_longer_available_adjacent(g, player, field);
@@ -566,7 +571,7 @@ void gamma_remove_players_ownership(gamma_t *g, ui32 player, point_t field) {
  * @param[in] player      – numer gracza,
  * @param[in] start       – struktura przechowująca informacje o polu.
  */
-void gamma_reset_parents_in_area(gamma_t *g, ui32 player, point_t start) {
+void gamma_reset_parents_in_area(gamma_t *g, uint32_t player, point_t start) {
     list_add(g->list, start);
 
     g->bfs_calls++;
@@ -602,7 +607,8 @@ void gamma_reset_parents_in_area(gamma_t *g, ui32 player, point_t start) {
  * @param[in] player      – numer gracza,
  * @param[in] start       – struktura przechowująca informacje o polu.
  */
-void gamma_recalc_areas_and_parents(gamma_t *g, ui32 player, point_t start) {
+void gamma_recalc_areas_and_parents(gamma_t *g, uint32_t player,
+                                    point_t start) {
     point_t field;
     for (int i = 0; i < 4; i++) {
         field = point_add(start, compass_rose(i));
@@ -641,10 +647,10 @@ void gamma_recalc_areas_and_parents(gamma_t *g, ui32 player, point_t start) {
 
 gamma_t *gamma_new(uint32_t width, uint32_t height, uint32_t players,
                    uint32_t areas) {
-    if (width <= 0 || height <= 0 || players <= 0)
+    if (width <= 0 || height <= 0 || players <= 0 || areas <= 0)
         return NULL;
 
-    gamma_t *res = malloc(sizeof(gamma_t));
+    gamma_t *res = calloc(1, sizeof(gamma_t));
     if (res == NULL)
         return NULL;
 
@@ -654,29 +660,30 @@ gamma_t *gamma_new(uint32_t width, uint32_t height, uint32_t players,
     res->max_area_count = areas;
     res->bfs_calls = 0;
 
-    res->free_fields = width * height;
+    res->free_fields = (uint64_t)width * (uint64_t)height;
 
-    res->players = calloc((players + 1), sizeof(player_t));
+    res->players = calloc(((uint64_t)players + (uint64_t)1), sizeof(player_t));
     if (res->players == NULL) {
         gamma_delete(res);
         return NULL;
     }
 
-    res->board = calloc(width + 1, sizeof(field_t *));
+    res->board = calloc((uint64_t)width + (uint64_t)1, sizeof(field_t *));
     if (res->board == NULL) {
         gamma_delete(res);
         return NULL;
     }
 
-    for (ui32 i = 0; i <= width; i++) {
-        res->board[i] = calloc((height + 1), sizeof(field_t));
+    for (uint32_t i = 0; i <= width; i++) {
+        res->board[i] =
+            calloc(((uint64_t)height + (uint64_t)1), sizeof(field_t));
         if (res->board[i] == NULL) {
             gamma_delete(res);
             return NULL;
         }
     }
 
-    res->list = list_init(2 * (width + height));
+    res->list = list_init((uint64_t)2 * ((uint64_t)width + (uint64_t)height));
 
     if (res->list == NULL) {
         gamma_delete(res);
@@ -695,7 +702,22 @@ void gamma_delete(gamma_t *g) {
 
     list_delete(g->list);
 
-    delete_2_dimension_array((void **)g->board, g->width + 1);
+    delete_2_dimension_array((void **)g->board,
+                             (uint64_t)g->width + (uint64_t)1);
+
+    // if (g->board != NULL) {
+    //     for (uint64_t i = 0; i < (uint64_t)g->width + 1; i++) {
+    //         if (g->board[i] == NULL)
+    //             break;
+
+    //         free(g->board[i]);
+    //         g->board[i] = NULL;
+    //     }
+
+    //     free(g->board);
+
+    //     g->board = NULL;
+    // }
 
     free(g);
 
@@ -729,7 +751,7 @@ bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
         !gamma_area_limit_allows(g, player, target))
         return false;
 
-    ui32 old_owner = gamma_field_owner(g, target);
+    uint32_t old_owner = gamma_field_owner(g, target);
 
     gamma_reset_parents_in_area(g, old_owner, target);
 
@@ -774,7 +796,7 @@ bool gamma_golden_possible(gamma_t *g, uint32_t player) {
     if (g->players[player].spent_golden_move)
         return false;
 
-    for (ui32 i = 1; i <= g->no_of_players; i++)
+    for (uint32_t i = 1; i <= g->no_of_players; i++)
         if (i != player && g->players[i].occupied_fields > 0)
             return true;
 
@@ -785,25 +807,46 @@ char *gamma_board(gamma_t *g) {
     if (g == NULL)
         return NULL;
 
-    ui32 field_width = get_number_length(g->no_of_players);
+    uint32_t field_width = get_number_length(g->no_of_players);
 
     if (field_width > 1)
         field_width++;
 
-    ui64 res_size = (field_width * g->width + 1) * g->height + 1;
+    uint64_t res_size = (field_width * g->width + 1) * g->height + 1;
 
     char *res = malloc(res_size * sizeof(char));
     if (res == NULL)
         return NULL;
 
-    ui64 iter = 0;
+    uint64_t iter = 0;
 
-    for (ui32 i = g->height; i > 0; i--)
-        for (ui32 j = 1; j <= g->width; j++)
-            for (ui32 k = 0; k < field_width + (j == g->width); k++)
+    for (uint32_t i = g->height; i > 0; i--)
+        for (uint32_t j = 1; j <= g->width; j++)
+            for (uint32_t k = 0; k < field_width + (j == g->width); k++)
                 res[iter++] = gamma_ith_char_in_field_description(g, j, i, k);
 
     res[iter] = 0;
 
     return res;
+}
+
+uint32_t gamma_get_player_number(gamma_t *g) {
+    if (g == NULL)
+        return 0;
+    else
+        return g->no_of_players;
+}
+
+uint32_t gamma_get_width(gamma_t *g) {
+    if (g == NULL)
+        return 0;
+    else
+        return g->width;
+}
+
+uint32_t gamma_get_height(gamma_t *g) {
+    if (g == NULL)
+        return 0;
+    else
+        return g->height;
 }

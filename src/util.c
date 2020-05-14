@@ -7,7 +7,7 @@
 
 #include "util.h"
 
-point_t make_point(ui32 x, ui32 y) {
+point_t make_point(uint32_t x, uint32_t y) {
     point_t res;
     res.x = x;
     res.y = y;
@@ -18,11 +18,11 @@ point_t point_add(point_t a, point_t b) {
     return make_point(a.x + b.x, a.y + b.y);
 }
 
+static point_t COMPASS_ROSE[] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
+
 point_t compass_rose(int i) {
     if (i < 0 || i > 3)
         return make_point(0, 0);
-
-    point_t COMPASS_ROSE[] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
 
     return COMPASS_ROSE[i];
 }
@@ -31,11 +31,11 @@ bool point_equal(point_t a, point_t b) {
     return a.x == b.x && a.y == b.y;
 }
 
-void delete_2_dimension_array(void **arr, ui32 size) {
+void delete_2_dimension_array(void **arr, uint32_t size) {
     if (arr == NULL)
         return;
 
-    for (ui32 i = 0; i < size; i++) {
+    for (uint32_t i = 0; i < size; i++) {
         free(arr[i]);
         arr[i] = NULL;
     }
@@ -45,8 +45,8 @@ void delete_2_dimension_array(void **arr, ui32 size) {
     arr = NULL;
 }
 
-ui32 get_number_length(ui32 num) {
-    ui32 res = 1;
+uint32_t get_number_length(uint32_t num) {
+    uint32_t res = 1;
 
     while (num > 9) {
         num /= 10;
@@ -56,13 +56,13 @@ ui32 get_number_length(ui32 num) {
     return res;
 }
 
-char get_ith_digit_in_number(ui32 num, ui32 i) {
-    ui32 num_len = get_number_length(num);
+char get_ith_digit_in_number(uint32_t num, uint32_t i) {
+    uint32_t num_len = get_number_length(num);
 
     if (i >= num_len)
         return 0;
 
-    ui32 rev_index = num_len - i - 1;
+    uint32_t rev_index = num_len - i - 1;
 
     while (rev_index > 0) {
         num /= 10;

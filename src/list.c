@@ -25,8 +25,10 @@ list_t *list_init(uint64_t size) {
     res->head = 0;
     res->tail = 0;
     res->nodes = calloc(size, sizeof(point_t));
-    if (res->nodes == NULL)
+    if (res->nodes == NULL) {
+        free(res);
         return NULL;
+    }
 
     return res;
 }
