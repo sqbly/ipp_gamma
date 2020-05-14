@@ -668,12 +668,12 @@ static int memory_alloc(void) {
         } while (p);
     }
 
-    printf("halo\n");
+    // printf("halo\n");
 
     while (gamma_new(MIDDLE_BOARD_SIZE, MIDDLE_BOARD_SIZE, 10, 3) != NULL)
         ;
 
-    printf("halo\n");
+    // printf("halo\n");
 
     for (uint32_t x = 0; x < SMALL_BOARD_SIZE; ++x)
         for (uint32_t y = 0; y < SMALL_BOARD_SIZE; ++y)
@@ -711,24 +711,24 @@ static int big_board(void) {
 
     unsigned success = 0;
     for (size_t i = 0; i < SIZE(game); ++i) {
-        printf("proba %ld z %ld \n", i, SIZE(game) - 1);
+        // printf("proba %ld z %ld \n", i, SIZE(game) - 1);
         errno = 0;
         gamma_t *g = gamma_new(game[i].width, game[i].height, game[i].players,
                                game[i].areas);
         if (g != NULL) {
-            printf("0\n");
+            // printf("0\n");
             uint64_t size = (uint64_t)game[i].width * (uint64_t)game[i].height;
-            printf("0.5\n");
-            printf("%ld\n", size);
-            printf("%ld\n", gamma_free_fields(g, game[i].players));
+            // printf("0.5\n");
+            // printf("%ld\n", size);
+            // printf("%ld\n", gamma_free_fields(g, game[i].players));
 
             assert(gamma_free_fields(g, game[i].players) == size);
-            printf("1\n");
+            // printf("1\n");
             // Przynajmniej cztery ruchy powinny się udać.
             assert(gamma_move(g, game[i].players, 0, 0));
-            printf("2\n");
+            // printf("2\n");
             assert(gamma_move(g, game[i].players, 0, game[i].height - 1));
-            printf("3\n");
+            // printf("3\n");
             assert(gamma_move(g, game[i].players, game[i].width - 1, 0));
             assert(gamma_move(g, game[i].players, game[i].width - 1,
                               game[i].height - 1));
@@ -798,7 +798,7 @@ int main(int argc, char *argv[]) {
     if (argc != 2)
         return WRONG_TEST;
 
-    for (size_t i = 13; i < SIZE(test_list); ++i) {
+    for (size_t i = 14; i < SIZE(test_list); ++i) {
         printf("%s\n", test_list[i].name);
         printf("%d\n\n", test_list[i].function());
     }
