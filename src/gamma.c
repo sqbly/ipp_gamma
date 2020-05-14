@@ -705,20 +705,6 @@ void gamma_delete(gamma_t *g) {
     delete_2_dimension_array((void **)g->board,
                              (uint64_t)g->width + (uint64_t)1);
 
-    // if (g->board != NULL) {
-    //     for (uint64_t i = 0; i < (uint64_t)g->width + 1; i++) {
-    //         if (g->board[i] == NULL)
-    //             break;
-
-    //         free(g->board[i]);
-    //         g->board[i] = NULL;
-    //     }
-
-    //     free(g->board);
-
-    //     g->board = NULL;
-    // }
-
     free(g);
 
     g = NULL;

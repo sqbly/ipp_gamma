@@ -52,14 +52,14 @@ void board_move_down(visual_board_t *board) {
 void board_move_left(visual_board_t *board) {
     if (board->cursor_x > 0) {
         move_left();
-        board->cursor_x--;
+        board->cursor_x -= board->field_width;
     }
 }
 
 void board_move_right(visual_board_t *board) {
-    if (board->cursor_x < board->field_width * board->width - 1) {
+    if (board->cursor_x < board->field_width * (board->width - 1)) {
         move_right();
-        board->cursor_x++;
+        board->cursor_x += board->field_width;
     }
 }
 
