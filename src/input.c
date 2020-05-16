@@ -1,3 +1,10 @@
+/** @file
+ * Implementacja biblioteki służącej do wczytywania danych
+ *
+ * @author Konrad Skublicki <ks418414@students.mimuw.edu.pl>
+ * @date 7.05.2020
+ */
+
 #include "input.h"
 
 #pragma GCC diagnostic ignored "-Wunused-result"
