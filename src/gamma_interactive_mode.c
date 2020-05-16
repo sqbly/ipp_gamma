@@ -1,13 +1,34 @@
+/** @file
+ * Implementacja biblioteki obsługującej tryb interaktywny
+ *
+ * @author Konrad Skublicki <ks418414@students.mimuw.edu.pl>
+ * @date 7.05.2020
+ */
+
 #include "gamma_interactive_mode.h"
 
+/**
+ * Struktura przechowująca informacje o wyświetlanej grze.
+ */
 typedef struct visual_board {
-    gamma_t *g;
-    uint32_t cursor_x, cursor_y, players, width, height, current_player,
-        field_width;
-    bool game_ended;
+    gamma_t *g;          ///< wskaźnik na strukturę przechowującą stan gry
+    uint32_t cursor_x,   ///< współrzędna x pozycji kursora
+        cursor_y,        ///< współrzędna y pozycji kursora
+        players,         ///< liczba graczy w grze
+        width,           ///< szerokość planszy w grze
+        height,          ///< wysokość planszy w grze
+        current_player,  ///< nr gracza, który aktualnie wykonuje ruch
+        field_width;     ///< szerokość jaką zajmują pojedyncze pola
+    bool game_ended;  ///< informacja czy wczytano instrukcję kończącą grę
 
 } visual_board_t;
 
+/** @brief Tworzy strukturę wyświetlanej planszy.
+ * Tworzy strukturę wyświetlanej planszy i poprawnie wypełnia ją informacjami o
+ * podanej grze.
+ * @param[in] game   – wskaźnik na strukturę przechowującą stan gry.
+ * @return Wypełniona struktura typu visual_board_t.
+ */
 visual_board_t new_visual_board(gamma_t *game) {
     visual_board_t res;
 
@@ -24,17 +45,40 @@ visual_board_t new_visual_board(gamma_t *game) {
     return res;
 }
 
+/** @brief Przesuwa kursor z powrotem na zapamiętaną pozycję.
+ * Ustawia kursor na pozycji zapamiętanej w strukturze wyświetlanej planszy.
+ * @param[in,out] board   – wskaźnik na strukturę przechowującą stan
+ *                          wyświetlanej planszy.
+ */
 void refresh_cursor(visual_board_t *board) {
+    if (board == NULL)
+        return;
+
     move_cursor(board->cursor_y + 1, board->cursor_x + 1);
 }
 
+/** @brief Zwiększa numer aktualnie wyświetlanego gracza (zapętla).
+ * Jeśli numer aktualnie wyświetlanego gracza nie jest równy liczbie graczy w
+ * grze to zwiększa go o jeden, wpp ustawia na 1.
+ * @param[in,out] board   – wskaźnik na strukturę przechowującą stan
+ *                          wyświetlanej planszy.
+ */
 void switch_to_next_player(visual_board_t *board) {
+    if (board == NULL)
+        return;
+
     if (board->current_player == board->players)
         board->current_player = 1;
     else
         board->current_player++;
 }
 
+/** @brief Przesuwa kursor o jeden wiersz w górę.
+ * Przesuwa kursor o jeden wiersz w górę. Nie pozwala na wyjście poza planszę.
+ * Zakłada poprawność argumentów.
+ * @param[in,out] board   – wskaźnik na strukturę przechowującą stan
+ *                      wyświetlanej planszy.
+ */
 void board_move_up(visual_board_t *board) {
     if (board->cursor_y > 0) {
         move_up();
@@ -42,6 +86,12 @@ void board_move_up(visual_board_t *board) {
     }
 }
 
+/** @brief Przesuwa kursor o jeden wiersz w dół.
+ * Przesuwa kursor o jeden wiersz w dół. Nie pozwala na wyjście poza planszę.
+ * Zakłada poprawność argumentów.
+ * @param[in,out] board   – wskaźnik na strukturę przechowującą stan
+ *                      wyświetlanej planszy.
+ */
 void board_move_down(visual_board_t *board) {
     if (board->cursor_y < board->height - 1) {
         move_down();
@@ -49,6 +99,12 @@ void board_move_down(visual_board_t *board) {
     }
 }
 
+/** @brief Przesuwa kursor o jedną kolumnę w lewo.
+ * Przesuwa kursor o jedną kolumnę w lewo. Nie pozwala na wyjście poza planszę.
+ * Zakłada poprawność argumentów.
+ * @param[in,out] board   – wskaźnik na strukturę przechowującą stan
+ *                      wyświetlanej planszy.
+ */
 void board_move_left(visual_board_t *board) {
     if (board->cursor_x > 0) {
         move_left();
@@ -56,6 +112,12 @@ void board_move_left(visual_board_t *board) {
     }
 }
 
+/** @brief Przesuwa kursor o jedną kolumnę w prawo.
+ * Przesuwa kursor o jedną kolumnę w prawo. Nie pozwala na wyjście poza planszę.
+ * Zakłada poprawność argumentów.
+ * @param[in,out] board   – wskaźnik na strukturę przechowującą stan
+ *                      wyświetlanej planszy.
+ */
 void board_move_right(visual_board_t *board) {
     if (board->cursor_x < board->field_width * (board->width - 1)) {
         move_right();
@@ -63,6 +125,13 @@ void board_move_right(visual_board_t *board) {
     }
 }
 
+/** @brief Wyświetla informacje o graczu aktualnie wykonującym ruch.
+ * Wyświetla informacje o graczu aktualnie wykonującym ruch: liczbę zajętych
+ * pól, liczbę pól, które jeszcze może zająć i informację czy może wykonać złoty
+ * ruch. Zakłada poprawność argumentów.
+ * @param[in] board   – wskaźnik na strukturę przechowującą stan
+ *                      wyświetlanej planszy.
+ */
 void print_player_info(visual_board_t *board) {
     printf("PLAYER %u\nBusy fields: %lu\nFree fields: %lu\n",
            board->current_player,
@@ -75,6 +144,13 @@ void print_player_info(visual_board_t *board) {
     printf("\n");
 }
 
+/** @brief Wyświetla planszę w miejscu, w którym znajduje się kursor i nie cofa
+ * go.
+ * Wyświetla planszę w miejscu, w którym znajduje się kursor i nie cofa go.
+ * Zakłada poprawność argumentów.
+ * @param[in] board   – wskaźnik na strukturę przechowującą stan
+ *                      wyświetlanej planszy.
+ */
 void print_board_simple(visual_board_t *board) {
     char *board_state = gamma_board(board->g);
 
@@ -87,6 +163,14 @@ void print_board_simple(visual_board_t *board) {
     free(board_state);
 }
 
+/** @brief Czyści konsolę i wyświetla informacje o grze. Ustawia kursor w lewym
+ * górnym rogu.
+ * Czyści konsolę i wyświetla informacje o grze: planszę i informacje o
+ * pierwszym graczu. Ustawia kursor w lewym górnym rogu. Zakłada poprawność
+ * argumentów.
+ * @param[in] board   – wskaźnik na strukturę przechowującą stan
+ *                      wyświetlanej planszy.
+ */
 void print_initial_visuals(visual_board_t *board) {
     move_cursor(0, 0);
 
@@ -94,13 +178,18 @@ void print_initial_visuals(visual_board_t *board) {
 
     print_board_simple(board);
 
-    printf("SOMEBODY MAKE A MOVE\n");
-
     print_player_info(board);
 
     move_cursor(0, 0);
 }
 
+/** @brief "Odświeża" wyświetlone informacje o grze.
+ * Czyści konsolę i wyświetla informacje o grze: planszę i informacje o
+ * graczu aktualnie wykonującym ruch. Pozostawia kursor w tej samej pozycji, w
+ * której był. Zakłada poprawność argumentów.
+ * @param[in] board   – wskaźnik na strukturę przechowującą stan
+ *                      wyświetlanej planszy.
+ */
 void refresh(visual_board_t *board) {
     move_cursor(0, 0);
 
@@ -113,11 +202,24 @@ void refresh(visual_board_t *board) {
     refresh_cursor(board);
 }
 
+/** @brief Wyświetla podsumowanie zdobytych przez gracza punktów.
+ * Wyświetla podsumowanie zdobytych przez gracza punktów. Zakłada poprawność
+ * argumentów.
+ * @param[in] board   – wskaźnik na strukturę przechowującą stan
+ *                      wyświetlanej planszy,
+ * @param[in] player  – nr gracza.
+ */
 void print_player_summary(visual_board_t *board, uint32_t player) {
     printf("PLAYER %d: %lu points\n\n", player,
            gamma_busy_fields(board->g, player));
 }
 
+/** @brief Wyświetla podsumowanie gry.
+ * Wyświetla stan planszy pod koniec gry i punkty zdobyte przez wszystkich
+ * graczy. Zakłada poprawność argumentów.
+ * @param[in] board   – wskaźnik na strukturę przechowującą stan
+ *                      wyświetlanej planszy.
+ */
 void print_summary(visual_board_t *board) {
     move_cursor(0, 0);
 
@@ -125,12 +227,21 @@ void print_summary(visual_board_t *board) {
 
     print_board_simple(board);
 
-    printf("SOMEBODY MADE A MOVE\n\n");
-
     for (uint32_t i = 1; i <= board->players; i++)
         print_player_summary(board, i);
 }
 
+/** @brief Sprawdza czy wczytany znak rozpoczyna sekwencję opisującą ruch.
+ * Sprawdza czy wczytany znak rozpoczyna sekwencję opisującą ruch. Jeśli tak to
+ * wczytuje resztę sekwencji i wykonuje go. Wpp lub jeśli sekwencja jest
+ * niepoprawna ustawia zmienną @p c na następny znak z wejścia. Zakłada
+ * poprawność argumentów.
+ * @param[in,out] board   – wskaźnik na strukturę przechowującą stan
+ *                          wyświetlanej planszy,
+ * @param[in,out] c       – wczytany znak z wejścia.
+ * @return Wartość @p true jeśli wczytano i wykonano sekwencję opisującą ruch,
+ * wpp @p false .
+ */
 bool interpret_movement(visual_board_t *board, char *c) {
     if (*c == '\033') {
         refresh(board);
@@ -158,20 +269,41 @@ bool interpret_movement(visual_board_t *board, char *c) {
         }
 
         return true;
-    }
-    else {
+    } else {
         return false;
     }
 }
 
+/** @brief Zwraca numer kolumny, w której znajduje się kursor.
+ * Zwraca numer kolumny, w której znajduje się kursor. Zakłada poprawność
+ * argumentów.
+ * @param[in,out] board   – wskaźnik na strukturę przechowującą stan
+ *                          wyświetlanej planszy.
+ * @return Numer kolumny, w której znajduje się kursor.
+ */
 uint32_t get_column_number(visual_board_t *board) {
     return (board->cursor_x) / (board->field_width);
 }
 
+/** @brief Zwraca numer wiersza, w którym znajduje się kursor.
+ * Zwraca numer wiersza, w którym znajduje się kursor. Zakłada poprawność
+ * argumentów.
+ * @param[in,out] board   – wskaźnik na strukturę przechowującą stan
+ *                          wyświetlanej planszy.
+ * @return Numer wiersza, w którym znajduje się kursor.
+ */
 uint32_t get_row_number(visual_board_t *board) {
     return (board->height) - (board->cursor_y) - 1;
 }
 
+/** @brief Interpretuje znak wczytany z wejścia, który nie opisuje ruchu.
+ * Interpretuje znak wczytany z wejścia, zakładając, że nie opisuje on ruchu.
+ * @param[in,out] board   – wskaźnik na strukturę przechowującą stan
+ *                          wyświetlanej planszy,
+ * @param[in,out] c       – wczytany znak z wejścia.
+ * @return Wartość @p true jeśli wczytano i wykonano ruch, w przeciwnym
+ * przypadku wartość @p false .
+ */
 bool interpret_command(visual_board_t *board, char c) {
     if (c == ' ')
         return gamma_move(board->g, board->current_player,
@@ -188,6 +320,15 @@ bool interpret_command(visual_board_t *board, char c) {
     return false;
 }
 
+/** @brief Obsługuje wykonanie ruchu przez gracza.
+ * Jeśli gracz może wykonać ruch, wczytuje znaki z wejścia aż zostanie wykonany
+ * poprawny ruch lub gra się zakończy. Jeśli gracz nie może wykonać ruchu kończy
+ * wykonanie.
+ * @param[in,out] board   – wskaźnik na strukturę przechowującą stan
+ *                          wyświetlanej planszy.
+ * @return Wartość @p true jeśli wczytano i wykonano ruch, w przeciwnym
+ * przypadku wartość @p false .
+ */
 bool get_players_move(visual_board_t *board) {
     gamma_t *game = board->g;
     uint32_t player = board->current_player;
