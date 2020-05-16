@@ -189,7 +189,7 @@ char gamma_ith_char_in_field_description(gamma_t *g, uint32_t x, uint32_t y,
 
     uint32_t owner_num = g->board[x][y].owner;
 
-    if (i == field_width && x == g->width)
+    if (i == field_width && x == g->width - 1)
         return '\n';
 
     if (owner_num == 0) {
@@ -227,8 +227,8 @@ bool gamma_player_number_correct(gamma_t *g, uint32_t player) {
 
 // Komentarz przy deklaracji.
 bool gamma_field_out_of_bounds(gamma_t *g, point_t field) {
-    if (field.x <= 0 || field.x > g->width || field.y <= 0 ||
-        field.y > g->height)
+    if (field.x == UINT32_MAX || field.x >= g->width || field.y == UINT32_MAX ||
+        field.y >= g->height)
         return true;
     else
         return false;
@@ -668,22 +668,21 @@ gamma_t *gamma_new(uint32_t width, uint32_t height, uint32_t players,
         return NULL;
     }
 
-    res->board = calloc((uint64_t)width + (uint64_t)1, sizeof(field_t *));
+    res->board = calloc((uint64_t)width, sizeof(field_t *));
     if (res->board == NULL) {
         gamma_delete(res);
         return NULL;
     }
 
-    for (uint32_t i = 0; i <= width; i++) {
-        res->board[i] =
-            calloc(((uint64_t)height + (uint64_t)1), sizeof(field_t));
+    for (uint32_t i = 0; i < width; i++) {
+        res->board[i] = calloc(((uint64_t)height), sizeof(field_t));
         if (res->board[i] == NULL) {
             gamma_delete(res);
             return NULL;
         }
     }
 
-    res->list = list_init((uint64_t)2 * ((uint64_t)width + (uint64_t)height));
+    res->list = list_init((uint64_t)width * (uint64_t)height);
 
     if (res->list == NULL) {
         gamma_delete(res);
@@ -702,8 +701,7 @@ void gamma_delete(gamma_t *g) {
 
     list_delete(g->list);
 
-    delete_2_dimension_array((void **)g->board,
-                             (uint64_t)g->width + (uint64_t)1);
+    delete_2_dimension_array((void **)g->board, (uint64_t)g->width);
 
     free(g);
 
@@ -711,7 +709,7 @@ void gamma_delete(gamma_t *g) {
 }
 
 bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
-    point_t target = make_point(x + 1, y + 1);
+    point_t target = make_point(x, y);
 
     if (!gamma_player_can_take_field(g, player, target))
         return false;
@@ -728,7 +726,7 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
 }
 
 bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
-    point_t target = make_point(x + 1, y + 1);
+    point_t target = make_point(x, y);
 
     if (!gamma_golden_possible(g, player) ||
         gamma_field_out_of_bounds(g, target) ||
@@ -807,9 +805,10 @@ char *gamma_board(gamma_t *g) {
     uint64_t iter = 0;
 
     for (uint32_t i = g->height; i > 0; i--)
-        for (uint32_t j = 1; j <= g->width; j++)
-            for (uint32_t k = 0; k < field_width + (j == g->width); k++)
-                res[iter++] = gamma_ith_char_in_field_description(g, j, i, k);
+        for (uint32_t j = 0; j < g->width; j++)
+            for (uint32_t k = 0; k < field_width + (j == g->width - 1); k++)
+                res[iter++] =
+                    gamma_ith_char_in_field_description(g, j, i - 1, k);
 
     res[iter] = 0;
 

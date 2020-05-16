@@ -61,7 +61,7 @@ void list_add(list_t *l, point_t a) {
 
 point_t list_pop(list_t *l) {
     if (list_empty(l))
-        return make_point(0, 0);
+        return make_point(UINT32_MAX, UINT32_MAX);
 
     point_t res = l->nodes[l->head];
 

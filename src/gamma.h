@@ -115,10 +115,25 @@ bool gamma_golden_possible(gamma_t *g, uint32_t player);
  */
 char *gamma_board(gamma_t *g);
 
+/** @brief Daje liczbę graczy.
+ * Zwraca liczbę graczy biorących udział w grze.
+ * @param[in] g       – wskaźnik na strukturę przechowującą stan gry.
+ * @return Liczba graczy lub 0 jeśli @p g wskazuje na NULL.
+ */
 uint32_t gamma_get_player_number(gamma_t *g);
 
+/** @brief Daje szerokość planszy.
+ * Zwraca szerokość planszy, na której prowadzona jest rozgrywka.
+ * @param[in] g       – wskaźnik na strukturę przechowującą stan gry.
+ * @return Szerokość planszy lub 0 jeśli @p g wskazuje na NULL.
+ */
 uint32_t gamma_get_width(gamma_t *g);
 
+/** @brief Daje wysokość planszy.
+ * Zwraca wysokość planszy, na której prowadzona jest rozgrywka.
+ * @param[in] g       – wskaźnik na strukturę przechowującą stan gry.
+ * @return Wysokość planszy lub 0 jeśli @p g wskazuje na NULL.
+ */
 uint32_t gamma_get_height(gamma_t *g);
 
 #endif /* GAMMA_H */

@@ -798,7 +798,7 @@ int main(int argc, char *argv[]) {
     if (argc != 2)
         return WRONG_TEST;
 
-    for (size_t i = 14; i < SIZE(test_list); ++i) {
+    for (size_t i = 13; i < SIZE(test_list); ++i) {
         printf("%s\n", test_list[i].name);
         printf("%d\n\n", test_list[i].function());
     }

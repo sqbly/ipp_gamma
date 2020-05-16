@@ -1,13 +1,44 @@
+/** @file
+ * Implementacja biblioteki obsługującej tryb wsadowy
+ *
+ * @author Konrad Skublicki <ks418414@students.mimuw.edu.pl>
+ * @date 7.05.2020
+ */
+
 #include "gamma_batch_mode.h"
 
+/**
+ * Tablica przechowująca dopuszczane instrukcje.
+ */
 static const char command_types[] = {'m', 'g', 'b', 'f', 'q', 'p'};
+
+/**
+ * Tablica przechowująca liczbę argumentów wymaganych przez instrukcje na
+ * odpowiadających pozycjach w tabeli @p command_types .
+ */
 static const int proper_arg_number[] = {3, 3, 1, 1, 1, 0};
+
+/**
+ * Stała przechowująca liczbę typów instrukcji.
+ */
 static const int COMMAND_TYPE_NUMBER = sizeof command_types / sizeof(char);
 
+/** @brief Odnotowuje błąd na wyjściu diagnostycznym.
+ * Raportuje błąd i podaje nr_wiersza, w którym pojawiło się niepoprawne
+ * polecenie.
+ * @param[in] line_number      – nr wiersza.
+ */
 static void report_error(int line_number) {
     fprintf(stderr, "ERROR %d\n", line_number);
 }
 
+/** @brief Sprawdza czy wczytany typ instrukcji i liczba podanych argumentów się
+ * zgadzają.
+ * @param[in] type         – typ instrukcji,
+ * @param[in] number_count – liczba argumentów
+ * @return Wartość @p true jeśli funkcja otrzymała adekwatną liczbę argumentów,
+ * wartość @p false w przeciwnym przypadku.
+ */
 bool type_and_number_count_match(char type, int number_count) {
     for (int i = 0; i < COMMAND_TYPE_NUMBER; i++)
         if (type == command_types[i] && number_count == proper_arg_number[i])
@@ -16,6 +47,18 @@ bool type_and_number_count_match(char type, int number_count) {
     return false;
 }
 
+/** @brief Interpretuje instrukcję i wykonuje ją.
+ * Interpretuje instrukcję i wykonuje ją. Zakłada, że typ instrukcji i liczba
+ * parametrów są poprawne. Ignoruje parametry, które nie były potrzebne w danym
+ * wykonaniu funkcji. Wypisuje wynik funkcji na standardowe wyjście, przy czym
+ * wartość @p true wypisuje jako 1, a @p false jako 0.
+ * @param[in,out] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] type        – typ instrukcji,
+ * @param[in] player      – numer gracza, w przypadku gdy instrukcja go wymaga,
+ * @param[in] x           – numer kolumny, w przypadku gdy instrukcja go wymaga,
+ * @param[in] y           – numer wiersza, w przypadku gdy instrukcja go wymaga,
+ * @param[in] line_number – nr wiersza, w którym została podana instrukcja.
+ */
 void execute_command(gamma_t *g, char type, uint32_t player, uint32_t x,
                      uint32_t y, int line_number) {
     char *board;
