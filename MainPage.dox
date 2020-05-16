@@ -9,4 +9,58 @@ Uwaga: aktualna treść zadania znajduje się w [Moodle'u](https://moodle.mimuw.
 
 Tegoroczne duże zadanie polega na zaimplementowaniu gry gammma.
 
+### Instrukcja korzystania
+
+Należy utworzyć folder release, a następnie wejść do niego i wpisać następujące intrukcje:
+
+    cmake ..
+    make
+
+Zostanie utworzony plik wykonywalny "gamma". Na początku działania program oczekuje jednego z dwóch poleceń:
+
+    B width height players areas
+    I width height players areas
+
+Gdzie litery B/I oznaczają czy gra ma zostać uruchomiona w trybie wsadowym (B) czy interaktywnym (I).
+W miejsce width, height, players, areas należy wpisać dodatnie liczby całkowite określające: szerokość i wysokość planszy,
+liczbę graczy w grze i maksymalną liczbę rozłącznych obszarów, które mogą zajmować pionki graczy.
+
+### Tryb wsadowy
+
+Poprawne wykonanie polecenia B jest kwitowane wypisaniem na standardowe wyjście komunikatu
+
+OK line
+
+gdzie line jest numerem wiersza, w którym pojawiło się to polecenie. Po czym program akceptuje polecenia:
+
+    m player x y – wywołuje funkcję gamma_move,
+    g player x y – wywołuje funkcję gamma_golden_move,
+    b player – wywołuje funkcję gamma_busy_fields,
+    f player – wywołuje funkcję gamma_free_fields,
+    q player – wywołuje funkcję gamma_golden_possible,
+    p – wywołuje funkcję gamma_board.
+
+Program wypisuje wynik każdej z tych funkcji na standardowe wyjście. Wartość false wypisuje jako 0, a wartość true jako 1.
+
+Program nie interpretuje pustych wierszy (składających się tylko ze znaku przejścia do nowego wiersza) oraz wierszy zaczynających się znakiem #.
+
+Program kwituje każdy błędny wiersz (niepasujący do powyższego opisu) wypisaniem na standardowe wyjście diagnostyczne komunikatu
+
+ERROR line
+
+gdzie line jest numerem błędnego wiersza.
+
+### Tryb interaktywny 
+
+Poprawne wykonanie polecenia I powoduje przejście do trybu interaktywnego.
+
+W trybie interaktywnym po planszy porusza się za pomocą strzałek. Poza strzałkami gracze mogą użyć:
+
+    spacji  – aby postawić pionka na wybranym polu
+    C       – aby zrezygnować z ruchu
+    G       – aby skorzystać ze złotego ruchu
+
+Przy czym gra nie akceptuje niepoprawnych ruchów. 
+
+Gra kończy się gdy żaden gracz nie może wykonać ruchu lub po jednorazowym wciśnięciu Ctrl-D.
 */

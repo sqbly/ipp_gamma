@@ -1,5 +1,7 @@
 #include "input.h"
 
+#pragma GCC diagnostic ignored "-Wunused-result"
+
 /**
  * Tablica przechowująca dopuszczane białe znaki.
  */
@@ -85,7 +87,8 @@ static bool read_first_char(char *type, bool *return_value, bool *ignore,
 
     if (is_letter(c)) {
         *type = (char)c;
-    } else {
+    }
+    else {
         *error = true;
     }
 
@@ -180,10 +183,12 @@ bool read_command(char *type, uint64_t *arg1, uint64_t *arg2, uint64_t *arg3,
 
         if (is_white_char(c)) {
             white_space_count++;
-        } else if (!is_digit(c) ||
-                   (white_space_count == 0 && *number_count == 0)) {
+        }
+        else if (!is_digit(c) ||
+                 (white_space_count == 0 && *number_count == 0)) {
             error = true;
-        } else {
+        }
+        else {
             if (white_space_count > 0) {
                 (*number_count)++;
                 white_space_count = 0;
@@ -205,9 +210,9 @@ bool read_command(char *type, uint64_t *arg1, uint64_t *arg2, uint64_t *arg3,
 }
 
 char get_char_raw() {
-    system("stty raw");
+    system("stty -echo raw");
     int c = getchar();
-    system("stty cooked");
+    system("stty echo cooked");
     move_left();
     return c;
 }
