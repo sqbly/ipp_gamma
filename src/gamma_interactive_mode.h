@@ -14,8 +14,6 @@
 
 /** @brief Przeprowadza rozgrywkę w trybie interaktywnym.
  * @param[in,out] game          – wskaźnik na strukturę przechowującą stan gry
- * @param[in,out] line_counter  – wskaźnik na zmienną, liczącą wiersze
- *                                na wejściu
  */
 void init_interactive_mode(gamma_t *game);
 
