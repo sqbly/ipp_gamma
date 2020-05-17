@@ -246,12 +246,12 @@ bool interpret_movement(visual_board_t *board, char *c) {
     if (*c == '\033') {
         refresh(board);
 
-        if ((*c = get_char_raw()) != '[')
+        if ((*c = get_char_raw(board->g)) != '[')
             return false;
 
         refresh(board);
 
-        switch (*c = get_char_raw()) {
+        switch (*c = get_char_raw(board->g)) {
         case 'A':
             board_move_up(board);
             break;
@@ -269,7 +269,8 @@ bool interpret_movement(visual_board_t *board, char *c) {
         }
 
         return true;
-    } else {
+    }
+    else {
         return false;
     }
 }
@@ -340,7 +341,7 @@ bool get_players_move(visual_board_t *board) {
     char c;
     bool move_made = false;
 
-    while (!move_made && ((c = get_char_raw()) != 4)) {
+    while (!move_made && ((c = get_char_raw(board->g)) != 4)) {
         if (!interpret_movement(board, &c))
             move_made = interpret_command(board, c);
 

@@ -7,8 +7,6 @@
 
 #include "input.h"
 
-#pragma GCC diagnostic ignored "-Wunused-result"
-
 /**
  * Tablica przechowująca dopuszczane białe znaki.
  */
@@ -216,10 +214,16 @@ bool read_command(char *type, uint64_t *arg1, uint64_t *arg2, uint64_t *arg3,
     return return_value;
 }
 
-char get_char_raw() {
-    system("stty -echo raw");
+char get_char_raw(gamma_t *g) {
+    if (system("stty -echo raw")) {
+        gamma_delete(g);
+        exit(1);
+    }
     int c = getchar();
-    system("stty echo cooked");
+    if (system("stty echo cooked")) {
+        gamma_delete(g);
+        exit(1);
+    }
     move_left();
     return c;
 }

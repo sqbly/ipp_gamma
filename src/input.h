@@ -14,6 +14,7 @@
 #include <stdlib.h>
 
 #include "ansi_escape_utils.h"
+#include "gamma.h"
 
 #define IGNORE -2
 #define ERROR -1
@@ -48,6 +49,6 @@ bool read_command(char *type, uint64_t *arg1, uint64_t *arg2, uint64_t *arg3,
 /** @brief Wczytuje pojedynczy znak z wejścia w trybie raw.
  * @return Wczytany znak.
  */
-char get_char_raw();
+char get_char_raw(gamma_t *g);
 
 #endif /* INPUT_H */
