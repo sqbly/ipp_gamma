@@ -35,7 +35,6 @@ set(SOURCE_FILES
     src/gamma_interactive_mode.h 
     src/ansi_escape_utils.h
     src/gamma_main.c)
-    #src/gamma_testing.c)
 
 # Wskazujemy plik wykonywalny.
 add_executable(gamma ${SOURCE_FILES})
