@@ -16,7 +16,15 @@
 #include "ansi_escape_utils.h"
 #include "gamma.h"
 
+/**
+ * Stała używana przez read_command do zakomunikowania, że wiersz należy
+ * zignorować
+ */
 #define IGNORE -2
+
+/**
+ * Stała używana przez read_command do zakomunikowania, że wiersz jest błędny
+ */
 #define ERROR -1
 
 /** @brief Wczytuje pojedynczą linijke w trybie wsadowym i częściowo sprawdza

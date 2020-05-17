@@ -40,7 +40,7 @@ static bool is_letter(int c) {
 }
 
 /** @brief Sprawdza czy wczytany znak jest cyfrą.
- * @param[in] x        – wczytany znak
+ * @param[in] c        – wczytany znak
  * @return Wartość @p true jeśli wczytany znak jest cyfrą,
  * wartość @p false w przeciwnym przypadku.
  */

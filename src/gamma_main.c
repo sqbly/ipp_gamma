@@ -14,7 +14,11 @@
  * Struktura przechowująca parametry do rozpoczęcia rozgrywki.
  */
 typedef struct game_parameters {
-    uint32_t width, height, players, areas;
+    uint32_t width,  ///< szerokość planszy
+        height,      ///< wysokość planszy
+        players,     ///< liczba graczy
+        areas;  ///< maksymalna liczba rozłącznych obszarów, które może zająć
+                ///< jedeng racz
 } game_parameters;
 
 /** @brief Ustawia zmienne w strukturze na podane wartości.
@@ -89,7 +93,8 @@ bool determine_game_mode(char *mode, game_parameters *parameters,
             set_game_parameters_value(parameters, width, height, players,
                                       areas);
             return true;
-        } else {
+        }
+        else {
             if (number_count != IGNORE) {
                 report_error(*line_counter);
             }
@@ -128,7 +133,8 @@ int main() {
                 report_ok(line_counter);
                 init_batch_mode(game, &line_counter);
                 gamma_delete(game);
-            } else {
+            }
+            else {
                 report_error(line_counter);
             }
         }
@@ -141,7 +147,8 @@ int main() {
                 game_created = true;
                 init_interactive_mode(game);
                 gamma_delete(game);
-            } else {
+            }
+            else {
                 report_error(line_counter);
             }
         }

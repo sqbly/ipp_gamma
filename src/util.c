@@ -18,6 +18,10 @@ point_t point_add(point_t a, point_t b) {
     return make_point(a.x + b.x, a.y + b.y);
 }
 
+/**
+ * "Róża wiatrów" - tablica zmiany współrzędnych przy poruszaniu się w kolejnych
+ * kierunach.
+ */
 static point_t COMPASS_ROSE[] = {{0, 1}, {0, -1}, {1, 0}, {-1, 0}};
 
 point_t compass_rose(int i) {
