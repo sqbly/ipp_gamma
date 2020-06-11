@@ -356,6 +356,60 @@ bool gamma_player_can_take_field(gamma_t *g, uint32_t player, point_t field) {
         return true;
 }
 
+/** @brief Sprawdza czy gracz spełnia podstawowe kryteria wykonania złotego
+ * ruchu. Sprawdza czy gracz @p player nie wykorzystał jeszcze złotego ruchu i
+ * czy na planszy znajduje się conajmniej jedno pole zajęte przez innego gracza.
+ *
+ * @param[in] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] player  – numer gracza,
+ *
+ * @return Wartość @p true jeśli gracz @p player spełnia kryteria wykonania
+ * złotego ruchu i dane są poprawne, @p false w przeciwnym przypadku.
+ */
+bool gamma_golden_basic_requirements(gamma_t *g, uint32_t player) {
+    if (!gamma_player_number_correct(g, player))
+        return false;
+
+    if (g->players[player].spent_golden_move)
+        return false;
+
+    for (uint32_t i = 1; i <= g->no_of_players; i++)
+        if (i != player && g->players[i].occupied_fields > 0)
+            return true;
+
+    return false;
+}
+
+/** @brief Sprawdza czy gracz może zająć pole za pomocą złotego ruchu.
+ * Sprawdza czy gracz @p player może zajęć pole o współrzędnych @p x, @p y
+ * używając złotego ruchu i nie łamiąc zasad gry.
+ *
+ * @param[in] g       – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] player  – numer gracza,
+ * @param[in] x       – nr kolumny,
+ * @param[in] y       – nr wiersza.
+ *
+ * @return Wartość @p true jeśli gracz @p player może zająć pole za pomocą
+ * złotego ruchu, @p false w przeciwnym przypadku.
+ */
+bool gamma_golden_check_field(gamma_t *g, uint32_t player, uint32_t x,
+                              uint32_t y) {
+    uint32_t owner = gamma_field_owner(g, make_point(x, y));
+    if (owner == 0 || owner == player)
+        return false;
+
+    bool owner_golden_state = g->players[owner].spent_golden_move;
+    g->players[owner].spent_golden_move = false;
+
+    bool res = gamma_golden_move(g, player, x, y);
+
+    gamma_golden_move(g, owner, x, y);
+    g->players[owner].spent_golden_move = owner_golden_state;
+    g->players[player].spent_golden_move = false;
+
+    return res;
+}
+
 // Settery
 
 /** @brief Zwiększa liczbę obszarów gracza.
@@ -728,7 +782,7 @@ bool gamma_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
 bool gamma_golden_move(gamma_t *g, uint32_t player, uint32_t x, uint32_t y) {
     point_t target = make_point(x, y);
 
-    if (!gamma_golden_possible(g, player) ||
+    if (!gamma_golden_basic_requirements(g, player) ||
         gamma_field_out_of_bounds(g, target) ||
         gamma_field_owner(g, target) == 0 ||
         gamma_field_owner(g, target) == player ||
@@ -774,15 +828,19 @@ uint64_t gamma_free_fields(gamma_t *g, uint32_t player) {
 }
 
 bool gamma_golden_possible(gamma_t *g, uint32_t player) {
-    if (!gamma_player_number_correct(g, player))
-        return false;
-
-    if (g->players[player].spent_golden_move)
-        return false;
-
-    for (uint32_t i = 1; i <= g->no_of_players; i++)
-        if (i != player && g->players[i].occupied_fields > 0)
+    if (gamma_golden_basic_requirements(g, player)) {
+        if (!gamma_area_limit_reached(g, player)) {
             return true;
+        }
+    }
+    else {
+        return false;
+    }
+
+    for (uint32_t i = 0; i < g->width; i++)
+        for (uint32_t j = 0; j < g->height; j++)
+            if (gamma_golden_check_field(g, player, i, j))
+                return true;
 
     return false;
 }
