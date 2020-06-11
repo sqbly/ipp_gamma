@@ -9,6 +9,8 @@
 #define ANSI_ESCAPE_H
 
 #include <stdio.h>
+#define MAGENTA 45
+#define NO_COLOR 0
 
 /** @brief Czyści konsolę od kursora w dół.
  */
@@ -52,6 +54,18 @@ static inline void move_right() {
  */
 static inline void move_left() {
     printf("\033[1D");
+}
+
+static inline void set_background_color(int code) {
+    printf("\x1b[%dm", code);
+}
+
+static inline void hide_coursor() {
+    printf("\x1b[?25l");
+}
+
+static inline void show_coursor() {
+    printf("\x1b[?25h");
 }
 
 #endif /* ANSI_ESCAPE_H */

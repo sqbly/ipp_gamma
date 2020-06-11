@@ -45,18 +45,6 @@ visual_board_t new_visual_board(gamma_t *game) {
     return res;
 }
 
-/** @brief Przesuwa kursor z powrotem na zapamiętaną pozycję.
- * Ustawia kursor na pozycji zapamiętanej w strukturze wyświetlanej planszy.
- * @param[in,out] board   – wskaźnik na strukturę przechowującą stan
- *                          wyświetlanej planszy.
- */
-void refresh_cursor(visual_board_t *board) {
-    if (board == NULL)
-        return;
-
-    move_cursor(board->cursor_y + 1, board->cursor_x + 1);
-}
-
 /** @brief Zwiększa numer aktualnie wyświetlanego gracza (zapętla).
  * Jeśli numer aktualnie wyświetlanego gracza nie jest równy liczbie graczy w
  * grze to zwiększa go o jeden, wpp ustawia na 1.
@@ -133,7 +121,7 @@ void board_move_right(visual_board_t *board) {
  *                      wyświetlanej planszy.
  */
 void print_player_info(visual_board_t *board) {
-    printf("PLAYER %u\nBusy fields: %lu\nFree fields: %lu\n",
+    printf("Player %u\nBusy fields: %lu\nFree fields: %lu\n",
            board->current_player,
            gamma_busy_fields(board->g, board->current_player),
            gamma_free_fields(board->g, board->current_player));
@@ -142,6 +130,28 @@ void print_player_info(visual_board_t *board) {
         printf("Golden move available");
 
     printf("\n");
+}
+
+/** @brief Zwraca numer kolumny, w której znajduje się kursor.
+ * Zwraca numer kolumny, w której znajduje się kursor. Zakłada poprawność
+ * argumentów.
+ * @param[in,out] board   – wskaźnik na strukturę przechowującą stan
+ *                          wyświetlanej planszy.
+ * @return Numer kolumny, w której znajduje się kursor.
+ */
+uint32_t get_column_number(visual_board_t *board) {
+    return (board->cursor_x) / (board->field_width);
+}
+
+/** @brief Zwraca numer wiersza, w którym znajduje się kursor.
+ * Zwraca numer wiersza, w którym znajduje się kursor. Zakłada poprawność
+ * argumentów.
+ * @param[in,out] board   – wskaźnik na strukturę przechowującą stan
+ *                          wyświetlanej planszy.
+ * @return Numer wiersza, w którym znajduje się kursor.
+ */
+uint32_t get_row_number(visual_board_t *board) {
+    return (board->height) - (board->cursor_y) - 1;
 }
 
 /** @brief Wyświetla planszę w miejscu, w którym znajduje się kursor i nie cofa
@@ -156,10 +166,30 @@ void print_board_simple(visual_board_t *board) {
 
     if (board_state == NULL) {
         gamma_delete(board->g);
+        show_coursor();
         exit(1);
     }
 
-    printf("%s", board_state);
+    uint64_t index = 0;
+    for (uint32_t i = 0; i < board->height; i++) {
+        for (uint32_t j = 0; j < board->width; j++) {
+            if (get_row_number(board) == board->height - i - 1 &&
+                get_column_number(board) == j)
+                set_background_color(MAGENTA);
+
+            for (uint32_t k = 0; k < board->field_width; k++) {
+                if (k == board->field_width - 1 && k > 0)
+                    set_background_color(NO_COLOR);
+
+                printf("%c", board_state[index]);
+                index++;
+            }
+            set_background_color(NO_COLOR);
+        }
+        printf("%c", board_state[index]);
+        index++;
+    }
+
     free(board_state);
 }
 
@@ -198,8 +228,6 @@ void refresh(visual_board_t *board) {
     print_board_simple(board);
 
     print_player_info(board);
-
-    refresh_cursor(board);
 }
 
 /** @brief Wyświetla podsumowanie zdobytych przez gracza punktów.
@@ -210,8 +238,38 @@ void refresh(visual_board_t *board) {
  * @param[in] player  – nr gracza.
  */
 void print_player_summary(visual_board_t *board, uint32_t player) {
-    printf("PLAYER %d: %lu points\n\n", player,
+    printf("Player %d: %lu points\n\n", player,
            gamma_busy_fields(board->g, player));
+}
+
+void print_winners(visual_board_t *board) {
+    uint64_t max_res = 0;
+    uint32_t number_of_winners = 0;
+
+    for (uint32_t i = 1; i <= board->players; i++) {
+        if (gamma_busy_fields(board->g, i) > max_res) {
+            max_res = gamma_busy_fields(board->g, i);
+            number_of_winners = 1;
+        }
+        else if (gamma_busy_fields(board->g, i) == max_res) {
+            number_of_winners++;
+        }
+    }
+
+    if (number_of_winners > 1) {
+        printf("WINNERS:\n\n");
+    }
+    else {
+        printf("WINNER:\n\n");
+    }
+
+    for (uint32_t i = 1; i <= board->players; i++) {
+        if (gamma_busy_fields(board->g, i) == max_res) {
+            printf("Player %d\n", i);
+        }
+    }
+
+    printf("\n");
 }
 
 /** @brief Wyświetla podsumowanie gry.
@@ -225,7 +283,16 @@ void print_summary(visual_board_t *board) {
 
     clear_screen_to_bottom();
 
+    board->cursor_x = -1;
+    board->cursor_y = -1;
+
     print_board_simple(board);
+
+    printf("\nRESULTS:\n\n");
+
+    print_winners(board);
+
+    printf("\nSCORES:\n\n");
 
     for (uint32_t i = 1; i <= board->players; i++)
         print_player_summary(board, i);
@@ -275,28 +342,6 @@ bool interpret_movement(visual_board_t *board, char *c) {
     }
 }
 
-/** @brief Zwraca numer kolumny, w której znajduje się kursor.
- * Zwraca numer kolumny, w której znajduje się kursor. Zakłada poprawność
- * argumentów.
- * @param[in,out] board   – wskaźnik na strukturę przechowującą stan
- *                          wyświetlanej planszy.
- * @return Numer kolumny, w której znajduje się kursor.
- */
-uint32_t get_column_number(visual_board_t *board) {
-    return (board->cursor_x) / (board->field_width);
-}
-
-/** @brief Zwraca numer wiersza, w którym znajduje się kursor.
- * Zwraca numer wiersza, w którym znajduje się kursor. Zakłada poprawność
- * argumentów.
- * @param[in,out] board   – wskaźnik na strukturę przechowującą stan
- *                          wyświetlanej planszy.
- * @return Numer wiersza, w którym znajduje się kursor.
- */
-uint32_t get_row_number(visual_board_t *board) {
-    return (board->height) - (board->cursor_y) - 1;
-}
-
 /** @brief Interpretuje znak wczytany z wejścia, który nie opisuje ruchu.
  * Interpretuje znak wczytany z wejścia, zakładając, że nie opisuje on ruchu.
  * @param[in,out] board   – wskaźnik na strukturę przechowującą stan
@@ -315,7 +360,7 @@ bool interpret_command(visual_board_t *board, char c) {
                                  get_column_number(board),
                                  get_row_number(board));
 
-    if (c == 'C' || c == 'c' || c == 4)
+    if (c == 'C' || c == 'c' || c == 4 || c == 26)
         return true;
 
     return false;
@@ -341,14 +386,14 @@ bool get_players_move(visual_board_t *board) {
     char c;
     bool move_made = false;
 
-    while (!move_made && ((c = get_char_raw(board->g)) != 4)) {
+    while (!move_made && ((c = get_char_raw(board->g)) != 4) && c != 26) {
         if (!interpret_movement(board, &c))
             move_made = interpret_command(board, c);
 
         refresh(board);
     }
 
-    if (c == 4)
+    if (c == 4 || c == 26)
         board->game_ended = true;
 
     refresh(board);
@@ -357,6 +402,7 @@ bool get_players_move(visual_board_t *board) {
 }
 
 void init_interactive_mode(gamma_t *game) {
+    hide_coursor();
     visual_board_t board = new_visual_board(game);
 
     print_initial_visuals(&board);
@@ -378,4 +424,5 @@ void init_interactive_mode(gamma_t *game) {
     }
 
     print_summary(&board);
+    show_coursor();
 }
