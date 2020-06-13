@@ -164,16 +164,28 @@ uint32_t get_row_number(visual_board_t *board) {
     return (board->height) - (board->cursor_y) - 1;
 }
 
+/** @brief Wypisuje pojedyncze pole pokolorowane na odpowiedni kolor.
+ * Wypisuje pole w miejscu, w którym znajduje się kursor. Pole ma kolor magenta
+ * jeśli stoi na nim kursor i kolor zielony jeśli należy do gracza, który
+ * wykonuje ruch.
+ * @param[in] board   – wskaźnik na strukturę przechowującą stan
+ *                      wyświetlanej planszy,
+ * @param[in] board_state   – wskaźnik na napis opisujący planszę,
+ * @param[in] i             – nr wiersza,
+ * @param[in] j             – nr kolumny,
+ * @param[in] index         – wskaźnik zmienną przechowującą indeks aktualnie
+ *                            wypisywanego miejsca w napisie @p board_state
+ */
 void print_field(visual_board_t *board, char *board_state, uint32_t i,
                  uint32_t j, uint64_t *index) {
-    if (get_row_number(board) == board->height - i - 1 &&
-        get_column_number(board) == j)
-        set_background_color(MAGENTA_BKG);
-
     if (gamma_get_field_owner(board->g, j, board->height - i - 1) ==
         board->current_player) {
         set_background_color(GREEN_BKG);
     }
+
+    if (get_row_number(board) == board->height - i - 1 &&
+        get_column_number(board) == j)
+        set_background_color(MAGENTA_BKG);
 
     for (uint32_t k = 0; k < board->field_width; k++) {
         if (k == board->field_width - 1 && k > 0)
@@ -188,7 +200,9 @@ void print_field(visual_board_t *board, char *board_state, uint32_t i,
 /** @brief Wyświetla planszę w miejscu, w którym znajduje się kursor i nie cofa
  * go.
  * Wyświetla planszę w miejscu, w którym znajduje się kursor i nie cofa go.
- * Zakłada poprawność argumentów.
+ * Zakłada poprawność argumentów. Koloruje pola: pole, na którym znajduje się
+ * kursor na kolor magenta, a pola zajęte przez gracza aktualnie wykonującego
+ * ruch na zielony.
  * @param[in] board   – wskaźnik na strukturę przechowującą stan
  *                      wyświetlanej planszy.
  */
