@@ -126,9 +126,11 @@ bool terminal_too_small(game_parameters parameters) {
     struct winsize w;
     ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
 
-    return w.ws_col < parameters.width ||
+    return w.ws_col <
+               parameters.width * (get_number_length(parameters.players) +
+                                   (parameters.players > 9)) ||
            w.ws_col < 7 + get_number_length(parameters.players) ||
-           w.ws_row < parameters.height + 4;
+           w.ws_col < 30 || w.ws_row < parameters.height + 4;
 }
 
 /** @brief Przeprowadza grę gamma.

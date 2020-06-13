@@ -135,4 +135,15 @@ uint32_t gamma_get_width(gamma_t *g);
  */
 uint32_t gamma_get_height(gamma_t *g);
 
+/** @brief Zwraca nr właściciela pola.
+ * Zawraca numer właściciela pola ( @p x, @p y).
+ * @param[in,out] g   – wskaźnik na strukturę przechowującą stan gry,
+ * @param[in] x       – numer kolumny, liczba nieujemna mniejsza od wartości
+ *                      @p width z funkcji @ref gamma_new,
+ * @param[in] y       – numer wiersza, liczba nieujemna mniejsza od wartości
+ *                      @p height z funkcji @ref gamma_new.
+ * @return Nr właściciela pola lub 0 jeśli parametry były niepoprawne.
+ */
+uint32_t gamma_get_field_owner(gamma_t *g, uint32_t x, uint32_t y);
+
 #endif /* GAMMA_H */

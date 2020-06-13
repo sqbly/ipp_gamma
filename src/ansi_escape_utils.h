@@ -14,6 +14,10 @@
  */
 #define RESET_COLOR 0
 
+/** Kod do zmienienia koloru tła na zielony.
+ */
+#define GREEN_BKG 42
+
 /** Kod do zmienienia koloru tła na magentę.
  */
 #define MAGENTA_BKG 45

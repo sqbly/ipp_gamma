@@ -164,6 +164,27 @@ uint32_t get_row_number(visual_board_t *board) {
     return (board->height) - (board->cursor_y) - 1;
 }
 
+void print_field(visual_board_t *board, char *board_state, uint32_t i,
+                 uint32_t j, uint64_t *index) {
+    if (get_row_number(board) == board->height - i - 1 &&
+        get_column_number(board) == j)
+        set_background_color(MAGENTA_BKG);
+
+    if (gamma_get_field_owner(board->g, j, board->height - i - 1) ==
+        board->current_player) {
+        set_background_color(GREEN_BKG);
+    }
+
+    for (uint32_t k = 0; k < board->field_width; k++) {
+        if (k == board->field_width - 1 && k > 0)
+            set_background_color(RESET_COLOR);
+
+        printf("%c", board_state[*index]);
+        (*index)++;
+    }
+    set_background_color(RESET_COLOR);
+}
+
 /** @brief Wyświetla planszę w miejscu, w którym znajduje się kursor i nie cofa
  * go.
  * Wyświetla planszę w miejscu, w którym znajduje się kursor i nie cofa go.
@@ -171,7 +192,7 @@ uint32_t get_row_number(visual_board_t *board) {
  * @param[in] board   – wskaźnik na strukturę przechowującą stan
  *                      wyświetlanej planszy.
  */
-void print_board_simple(visual_board_t *board) {
+void print_board_colored(visual_board_t *board) {
     char *board_state = gamma_board(board->g);
 
     if (board_state == NULL) {
@@ -183,18 +204,7 @@ void print_board_simple(visual_board_t *board) {
     uint64_t index = 0;
     for (uint32_t i = 0; i < board->height; i++) {
         for (uint32_t j = 0; j < board->width; j++) {
-            if (get_row_number(board) == board->height - i - 1 &&
-                get_column_number(board) == j)
-                set_background_color(MAGENTA_BKG);
-
-            for (uint32_t k = 0; k < board->field_width; k++) {
-                if (k == board->field_width - 1 && k > 0)
-                    set_background_color(RESET_COLOR);
-
-                printf("%c", board_state[index]);
-                index++;
-            }
-            set_background_color(RESET_COLOR);
+            print_field(board, board_state, i, j, &index);
         }
         printf("%c", board_state[index]);
         index++;
@@ -203,11 +213,10 @@ void print_board_simple(visual_board_t *board) {
     free(board_state);
 }
 
-/** @brief Czyści konsolę i wyświetla informacje o grze. Ustawia kursor w lewym
- * górnym rogu.
- * Czyści konsolę i wyświetla informacje o grze: planszę i informacje o
- * pierwszym graczu. Ustawia kursor w lewym górnym rogu. Zakłada poprawność
- * argumentów.
+/** @brief Czyści konsolę i wyświetla informacje o grze. Ustawia kursor w
+ * lewym górnym rogu. Czyści konsolę i wyświetla informacje o grze: planszę
+ * i informacje o pierwszym graczu. Ustawia kursor w lewym górnym rogu.
+ * Zakłada poprawność argumentów.
  * @param[in] board   – wskaźnik na strukturę przechowującą stan
  *                      wyświetlanej planszy.
  */
@@ -216,7 +225,7 @@ void print_initial_visuals(visual_board_t *board) {
 
     clear_screen_to_bottom();
 
-    print_board_simple(board);
+    print_board_colored(board);
 
     print_player_info(board);
 
@@ -235,7 +244,7 @@ void refresh(visual_board_t *board) {
 
     clear_screen_to_bottom();
 
-    print_board_simple(board);
+    print_board_colored(board);
 
     print_player_info(board);
 }
@@ -300,8 +309,9 @@ void print_summary(visual_board_t *board) {
 
     board->cursor_x = -1;
     board->cursor_y = -1;
+    board->current_player = -1;
 
-    print_board_simple(board);
+    print_board_colored(board);
 
     printf("\nRESULTS:\n\n");
 
@@ -407,7 +417,7 @@ bool get_players_move(visual_board_t *board) {
     if (c == 4 || c == 26)
         board->game_ended = true;
 
-    refresh(board);
+    // refresh(board);
 
     return true;
 }

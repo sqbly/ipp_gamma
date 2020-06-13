@@ -893,3 +893,10 @@ uint32_t gamma_get_height(gamma_t *g) {
     else
         return g->height;
 }
+
+uint32_t gamma_get_field_owner(gamma_t *g, uint32_t x, uint32_t y) {
+    if (g == NULL)
+        return 0;
+
+    return gamma_field_owner(g, make_point(x, y));
+}
