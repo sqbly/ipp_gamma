@@ -47,13 +47,6 @@ set(TEST_SOURCE_FILES
     src/list.h 
     src/util.c 
     src/util.h
-    src/input.c 
-    src/input.h 
-    src/gamma_batch_mode.c
-    src/gamma_batch_mode.h
-    src/gamma_interactive_mode.c 
-    src/gamma_interactive_mode.h 
-    src/ansi_escape_utils.h
     src/gamma_test.c)
 
 # Wskazujemy plik wykonywalny dla testów silnika.
