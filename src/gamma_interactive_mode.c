@@ -326,12 +326,8 @@ void print_summary(visual_board_t *board) {
  */
 bool interpret_movement(visual_board_t *board, char *c) {
     if (*c == '\033') {
-        refresh(board);
-
         if ((*c = get_char_raw(board->g)) != '[')
             return false;
-
-        refresh(board);
 
         switch (*c = get_char_raw(board->g)) {
         case 'A':
