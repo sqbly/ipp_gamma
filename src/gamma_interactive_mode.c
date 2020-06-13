@@ -126,8 +126,18 @@ void print_player_info(visual_board_t *board) {
            gamma_busy_fields(board->g, board->current_player),
            gamma_free_fields(board->g, board->current_player));
 
-    if (gamma_golden_possible(board->g, board->current_player))
-        printf("Golden move available");
+    set_text_color(YELLOW_TXT);
+    printf("Golden move: ");
+
+    if (gamma_golden_possible(board->g, board->current_player)) {
+        set_text_color(GREEN_TXT);
+        printf("available");
+    }
+    else {
+        set_text_color(RED_TXT);
+        printf("unavailable");
+    }
+    set_text_color(RESET_COLOR);
 
     printf("\n");
 }
@@ -175,16 +185,16 @@ void print_board_simple(visual_board_t *board) {
         for (uint32_t j = 0; j < board->width; j++) {
             if (get_row_number(board) == board->height - i - 1 &&
                 get_column_number(board) == j)
-                set_background_color(MAGENTA);
+                set_background_color(MAGENTA_BKG);
 
             for (uint32_t k = 0; k < board->field_width; k++) {
                 if (k == board->field_width - 1 && k > 0)
-                    set_background_color(NO_COLOR);
+                    set_background_color(RESET_COLOR);
 
                 printf("%c", board_state[index]);
                 index++;
             }
-            set_background_color(NO_COLOR);
+            set_background_color(RESET_COLOR);
         }
         printf("%c", board_state[index]);
         index++;
@@ -242,6 +252,11 @@ void print_player_summary(visual_board_t *board, uint32_t player) {
            gamma_busy_fields(board->g, player));
 }
 
+/** @brief Wyświetla graczy, którzy wygrali grę.
+ * Wyświetla graczy, którzy uzyskali najwyższy wynik w grze.
+ * @param[in] board   – wskaźnik na strukturę przechowującą stan
+ *                      wyświetlanej planszy.
+ */
 void print_winners(visual_board_t *board) {
     uint64_t max_res = 0;
     uint32_t number_of_winners = 0;

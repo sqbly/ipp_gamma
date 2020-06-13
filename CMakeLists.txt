@@ -39,6 +39,27 @@ set(SOURCE_FILES
 # Wskazujemy plik wykonywalny.
 add_executable(gamma ${SOURCE_FILES})
 
+# Wskazujemy pliki źródłowe do testowania silnika.
+set(TEST_SOURCE_FILES
+    src/gamma.c
+    src/gamma.h
+    src/list.c 
+    src/list.h 
+    src/util.c 
+    src/util.h
+    src/input.c 
+    src/input.h 
+    src/gamma_batch_mode.c
+    src/gamma_batch_mode.h
+    src/gamma_interactive_mode.c 
+    src/gamma_interactive_mode.h 
+    src/ansi_escape_utils.h
+    src/gamma_test.c)
+
+# Wskazujemy plik wykonywalny dla testów silnika.
+add_executable(test EXCLUDE_FROM_ALL ${TEST_SOURCE_FILES})
+set_target_properties(test PROPERTIES OUTPUT_NAME gamma_test)
+
 # Dodajemy obsługę Doxygena: sprawdzamy, czy jest zainstalowany i jeśli tak to:
 find_package(Doxygen)
 if (DOXYGEN_FOUND)

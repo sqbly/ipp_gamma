@@ -9,8 +9,26 @@
 #define ANSI_ESCAPE_H
 
 #include <stdio.h>
-#define MAGENTA 45
-#define NO_COLOR 0
+
+/** Kod do resetowania koloru tła lub tekstu.
+ */
+#define RESET_COLOR 0
+
+/** Kod do zmienienia koloru tła na magentę.
+ */
+#define MAGENTA_BKG 45
+
+/** Kod do zmienienia koloru tekstu na żółty.
+ */
+#define YELLOW_TXT 33
+
+/** Kod do zmienienia koloru tekstu na czerwony.
+ */
+#define RED_TXT 31
+
+/** Kod do zmienienia koloru tekstu na zielony.
+ */
+#define GREEN_TXT 32
 
 /** @brief Czyści konsolę od kursora w dół.
  */
@@ -56,14 +74,32 @@ static inline void move_left() {
     printf("\033[1D");
 }
 
+/** @brief Zmienia kolor tła tekstu.
+ * Zmienia kolor tła tekstu na ten podany za pomocą @p code.
+ * @param[in] code      – nr koloru tła.
+ */
 static inline void set_background_color(int code) {
     printf("\x1b[%dm", code);
 }
 
+/** @brief Zmienia kolor tekstu.
+ * Zmienia kolor tekstu na ten podany za pomocą @p code.
+ * @param[in] code      – nr koloru.
+ */
+static inline void set_text_color(int code) {
+    printf("\x1b[%dm", code);
+}
+
+/** @brief Chowa kursor.
+ * Chowa kursor.
+ */
 static inline void hide_coursor() {
     printf("\x1b[?25l");
 }
 
+/** @brief Pokazuje kursor.
+ * Pokazuje kursor.
+ */
 static inline void show_coursor() {
     printf("\x1b[?25h");
 }

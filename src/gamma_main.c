@@ -5,6 +5,9 @@
  * @date 7.05.2020
  */
 
+#include <sys/ioctl.h>
+#include <unistd.h>
+
 #include "gamma.h"
 #include "gamma_batch_mode.h"
 #include "gamma_interactive_mode.h"
@@ -110,6 +113,24 @@ bool determine_game_mode(char *mode, game_parameters *parameters,
     return false;
 }
 
+/** @brief Sprawdza czy terminal jest wystarczająco duży do przeprowadzenia gry
+ * w trybie interaktywnym.
+ * Sprawdza czy terminal jest wystarczająco duży do przeprowadzenia w trybie
+ * interaktywnym gry o parametrach przechowanych w  @p parameters .
+ * @param[in] parameters   – wskaźnik na strukturę, przechowującą parametry
+ *                               rozgrywki.
+ * @return Wartość @p true jeśli gra zmieści się w oknie, wartość @p false jeśli
+ * nie.
+ */
+bool terminal_too_small(game_parameters parameters) {
+    struct winsize w;
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+
+    return w.ws_col < parameters.width ||
+           w.ws_col < 7 + get_number_length(parameters.players) ||
+           w.ws_row < parameters.height + 4;
+}
+
 /** @brief Przeprowadza grę gamma.
  * Przeprowadza grę gamma w jednym z trybów: interaktywnym lub wsadowym.
  * @return Zero, gdy gra przebiegła poprawnie, jeden jeśli wystąpiły krytyczne
@@ -144,8 +165,15 @@ int main() {
                              parameters.players, parameters.areas);
 
             if (game != NULL) {
-                game_created = true;
-                init_interactive_mode(game);
+                if (!terminal_too_small(parameters)) {
+                    game_created = true;
+                    init_interactive_mode(game);
+                }
+                else {
+                    printf(
+                        "Game too big to display in this window. \nTry "
+                        "resizing the window or changing the parameters.\n");
+                }
                 gamma_delete(game);
             }
             else {
